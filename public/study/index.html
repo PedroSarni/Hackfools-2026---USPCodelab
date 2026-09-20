@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pilhas - estudo em formato Reels</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main id="feed" aria-label="Slides da aula"></main>
+
+  <header class="hud">
+    <div class="hud__pill" id="slideCounter">Slide 1 / 50</div>
+    <div class="hud__pill hud__timer" id="timerBadge">20s</div>
+  </header>
+
+  <aside class="gate" id="gateStatus" aria-live="polite">
+    <div class="gate__bar"><span id="gateProgress"></span></div>
+    <div class="gate__text" id="gateText">Fique neste slide por 20 segundos.</div>
+  </aside>
+
+  <div class="swipeHint" id="swipeHint" aria-hidden="true">↑ role para continuar</div>
+
+  <button class="casino-teaser" id="casinoTeaser" type="button" aria-label="Abrir cassino de minutos livres">
+    <img src="simoes_linguarudo.jpeg" alt="Quer ganhar mais tempo para procrastinar? Aposte agora" />
+    <span>🎰 APOSTE AQUI</span>
+  </button>
+
+  <div class="modal" id="quizModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
+    <div class="modal__backdrop"></div>
+    <section class="flashcard">
+      <div class="flashcard__tag">CHECKPOINT</div>
+      <h2 id="quizTitle">Antes de continuar...</h2>
+      <p class="flashcard__question" id="quizQuestion"></p>
+      <div class="flashcard__options" id="quizOptions"></div>
+      <p class="flashcard__feedback" id="quizFeedback" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <div class="casino-modal" id="casinoModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="casinoTitle">
+    <div class="casino-modal__backdrop"></div>
+    <section class="casino-card">
+      <div class="casino-lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <button class="casino-close" id="casinoClose" type="button" aria-label="Fechar">×</button>
+
+      <div class="casino-video-wrap">
+        <video id="casinoVideo" class="casino-video" autoplay muted loop playsinline preload="auto">
+          <source src="casino-ad.mp4" type="video/mp4" />
+        </video>
+        <div class="casino-video-fallback" aria-hidden="true">
+          <span>FREE TIME</span>
+          <strong>DOUBLE OR NOTHING</strong>
+        </div>
+        <div class="casino-video-shine"></div>
+      </div>
+
+      <div class="casino-head">
+        <div>
+          <div class="casino-kicker">BÔNUS DE INTERVALO</div>
+          <h2 id="casinoTitle">ROLETA DOS MINUTOS LIVRES</h2>
+        </div>
+        <div class="minute-wallet">
+          <span>MINUTOS LIVRES</span>
+          <strong id="freeMinutes">50</strong>
+          <small>hoje</small>
+        </div>
+      </div>
+
+      <p class="casino-copy">Aposte parte dos seus minutos livres para tentar dobrar a aposta. Quanto maior a aposta, menor a chance.</p>
+
+      <div class="casino-game">
+        <div class="roulette-shell">
+          <div class="roulette-pointer">▼</div>
+          <div class="roulette" id="roulette">
+            <div class="roulette-center">
+              <span>GIRO</span>
+              <b id="rouletteChance">50%</b>
+            </div>
+          </div>
+        </div>
+
+        <div class="casino-controls">
+          <label class="bet-label" for="betRange">
+            <span>Aposta</span>
+            <strong><span id="betAmount">1</span> min</strong>
+          </label>
+          <input id="betRange" class="bet-range" type="range" min="1" max="50" value="1" step="1" />
+
+          <div class="chance-row">
+            <span>Chance de dobrar</span>
+            <strong id="chanceText">50%</strong>
+          </div>
+          <div class="chance-meter"><span id="chanceMeter"></span></div>
+
+          <button class="spin-button" id="spinButton" type="button">
+            <span class="spin-button__glow"></span>
+            <span>GIRAR ROLETA</span>
+          </button>
+
+          <p class="casino-result" id="casinoResult" aria-live="polite"></p>
+          <p class="casino-rule">1 min = 50% · 2 min = 49% · ... · 50 min = 1%</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading__spinner"></div>
+    <strong>Carregando a aula...</strong>
+    <span>Renderizando o PDF</span>
+  </div>
+
+  <script src="pdf.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

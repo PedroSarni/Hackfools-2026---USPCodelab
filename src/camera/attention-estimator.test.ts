@@ -24,9 +24,10 @@ function observation(
 }
 
 describe('AttentionEstimator', () => {
-  it('não classifica postura antes da calibração', () => {
+  it('detecta presença sem calibração', () => {
     const estimator = new AttentionEstimator();
-    expect(estimator.update(observation(1_000)).candidate).toBe('uncertain');
+    expect(estimator.update(observation(1_000)).candidate).toBe('screen');
+    expect(estimator.update(observation(1_800)).signal.status).toBe('screen');
   });
 
   it('só estabiliza cabeça abaixada após permanência mínima', () => {

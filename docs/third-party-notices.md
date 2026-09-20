@@ -16,4 +16,25 @@
 
 O SDK e o repositório MediaPipe são Apache-2.0. Como o download do modelo não acompanha neste projeto um arquivo de licença específico do artefato, confirme os termos de redistribuição do modelo com a fonte oficial antes de publicar ou distribuir comercialmente o instalador.
 
-As demais licenças estão registradas nos metadados do `package-lock.json`/pacotes instalados. Nenhuma imagem da webcam é enviada pelo código do BaiStudy; o modelo e o WASM são carregados de `app://bundle/models`.
+As demais licenças estão registradas nos metadados do `package-lock.json`/pacotes instalados. Nenhuma imagem da webcam é enviada pelo código do FreddyBuddy; o modelo e o WASM são carregados de `app://bundle/models`.
+
+## eSpeak NG Emscripten
+
+- Pacote: `@echogarden/espeak-ng-emscripten` 0.3.5.
+- Licença declarada pelo pacote: GNU General Public License 3.0.
+- Uso: síntese de voz local do Freddy em uma worker thread, sem serviço externo.
+
+## Animações do Freddy
+
+Os GIFs e a imagem-base em `public/fred` vieram do pacote entregue pela equipe do projeto. A equipe deve manter a autorização e os créditos da origem desses arquivos antes de publicar ou redistribuir o aplicativo.
+
+## PDF.js
+
+- Versão empacotada: 3.11.174.
+- Projeto: <https://github.com/mozilla/pdf.js>
+- Licença declarada: Apache License 2.0.
+- Uso: renderização offline dos slides de `public/study/aula-pilhas.pdf`.
+
+O PDF da aula e o vídeo `casino-ad.mp4` vieram do pacote entregue pela equipe do projeto. A equipe deve manter a autorização e os créditos da origem desses materiais antes de publicar ou redistribuir o aplicativo.
+
+A imagem `public/study/simoes_linguarudo.jpeg` foi fornecida diretamente pela equipe para o anúncio clicável do cassino. A equipe deve manter a autorização de uso e os créditos antes de qualquer publicação.

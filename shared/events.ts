@@ -1,7 +1,8 @@
 export const IPC = {
+  instagram: { close: 'instagram:close', getReels: 'instagram:get-reels', getProcrastinationState: 'instagram:get-procrastination-state', recordProcrastinationMilestone: 'instagram:record-procrastination-milestone', startStudying: 'instagram:start-studying' },
   main: {
-    openCamera: 'main:open-camera',
     openInstagram: 'main:open-instagram',
+    openCamera: 'main:open-camera',
     getAppInfo: 'main:get-app-info',
   },
   camera: {
@@ -12,12 +13,19 @@ export const IPC = {
   },
   fred: {
     reaction: 'fred:reaction',
-  },
-  instagram: {
-    close: 'instagram:close',
-    getReels: 'instagram:get-reels',
-    getProcrastinationState: 'instagram:get-procrastination-state',
-    recordProcrastinationMilestone: 'instagram:record-procrastination-milestone',
-    startStudying: 'instagram:start-studying',
+    state: 'fred:state',
+    audio: 'fred:audio',
+    getState: 'fred:get-state',
+    show: 'fred:show',
+    hide: 'fred:hide',
+    simulate: 'fred:simulate',
+    preview: 'fred:preview',
+    openMain: 'fred:open-main',
+    hover: 'fred:hover',
+    voiceEnabled: 'fred:voice-enabled',
+    voiceTest: 'fred:voice-test',
+    voiceStop: 'fred:voice-stop',
+    voicePlayback: 'fred:voice-playback',
+    quit: 'app:quit',
   },
 } as const;

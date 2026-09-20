@@ -7,12 +7,12 @@ export async function createInstagramWindow(
   onCreated?: (window: BrowserWindow) => void,
 ): Promise<BrowserWindow> {
   const window = new BrowserWindow({
-    width: 426,
-    height: 856,
-    minWidth: 390,
-    minHeight: 720,
-    maxWidth: 520,
-    maxHeight: 980,
+    width: 450,
+    height: 800,
+    minWidth: 360,
+    minHeight: 640,
+    maxWidth: 540,
+    maxHeight: 960,
     title: 'BaiStudy — Instagram simulado',
     backgroundColor: '#000000',
     frame: false,
@@ -25,6 +25,7 @@ export async function createInstagramWindow(
       sandbox: true,
     },
   });
+  window.setAspectRatio(9 / 16);
   onCreated?.(window);
   window.once('ready-to-show', () => window.show());
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));

@@ -11,6 +11,7 @@ const IPC = {
 } as const;
 
 const bridge: CameraBridge = {
+  minimizeWindow: () => ipcRenderer.invoke('camera:minimize'),
   closeWindow: () => ipcRenderer.invoke(IPC.close),
   getPreferences: () => ipcRenderer.invoke(IPC.getPreferences),
   updatePreferences: (patch: Partial<CameraPreferences>) =>

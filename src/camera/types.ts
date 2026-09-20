@@ -33,13 +33,3 @@ export interface AttentionEstimate {
   candidate: AttentionStatus;
   candidateForMs: number;
 }
-
-export type VisionWorkerRequest =
-  | { type: 'init'; wasmBaseUrl: string; modelUrl: string }
-  | { type: 'frame'; bitmap: ImageBitmap; capturedAt: number; diagnostics: boolean }
-  | { type: 'dispose' };
-
-export type VisionWorkerResponse =
-  | { type: 'initialized' }
-  | { type: 'result'; observation: VisionObservation }
-  | { type: 'error'; message: string; fatal: boolean };

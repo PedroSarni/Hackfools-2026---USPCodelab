@@ -85,7 +85,8 @@ export class AttentionEstimator {
 
   private classify(observation: VisionObservation): AttentionStatus {
     if (!observation.detected) return 'absent';
-    if (!observation.metrics || observation.quality < MIN_QUALITY || !this.profile || !this.smoothed) {
+    if (!this.profile) return observation.quality >= MIN_QUALITY ? 'screen' : 'uncertain';
+    if (!observation.metrics || observation.quality < MIN_QUALITY || !this.smoothed) {
       return 'uncertain';
     }
 

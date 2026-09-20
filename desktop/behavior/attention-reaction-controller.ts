@@ -8,7 +8,7 @@ export class AttentionReactionController {
   private lastReactionAt = 0;
 
   consume(signal: AttentionSignal): FredReaction | null {
-    if (!signal.available || !signal.calibrated || signal.source !== 'camera') return null;
+    if (!signal.available || signal.source !== 'camera') return null;
     if (signal.status === this.previousStatus) return null;
 
     const prior = this.previousStatus;
@@ -25,7 +25,7 @@ export class AttentionReactionController {
       priority: signal.status === 'absent' ? 80 : 60,
       durationMs: 4_500,
       source: 'camera',
-      delivery: 'pending-fred',
+      delivery: 'fred',
     };
   }
 
@@ -33,17 +33,12 @@ export class AttentionReactionController {
     status: AttentionSignal['status'],
     prior: AttentionSignal['status'],
   ): Pick<FredReaction, 'mood' | 'message'> | null {
-    if (status === 'down') {
-      return { mood: 'suspicious', message: 'Olhou pra baixo. Espero que seja uma anotação.' };
-    }
-    if (status === 'away') {
-      return { mood: 'suspicious', message: 'Essa direção não foi a que você calibrou como tela.' };
-    }
+
     if (status === 'absent') {
-      return { mood: 'disappointed', message: 'Você sumiu e deixou só eu estudando.' };
+      return { mood: 'disappointed', message: 'Ei, volta aqui! Ainda temos slides para estudar.' };
     }
-    if (status === 'screen' && ['down', 'away', 'absent'].includes(prior)) {
-      return { mood: 'relieved', message: 'Voltou. Eu já estava contando seus segundos fora.' };
+    if (status === 'screen' && prior === 'absent') {
+      return { mood: 'observing', message: 'Boa, você voltou! Vamos continuar.' };
     }
     return null;
   }

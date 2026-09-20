@@ -12,7 +12,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         camera: resolve(import.meta.dirname, 'camera.html'),
-        instagram: resolve(import.meta.dirname, 'instagram.html'),
+        fred: resolve(import.meta.dirname, 'fred.html'),
       },
     },
   },

@@ -4,18 +4,19 @@ import { loadRenderer } from './load-renderer';
 
 export async function createMainWindow(onCreated?: (window: BrowserWindow) => void): Promise<BrowserWindow> {
   const window = new BrowserWindow({
-    width: 1180,
-    height: 760,
-    minWidth: 760,
-    minHeight: 540,
-    title: 'BaiStudy OS',
-    backgroundColor: '#0b1011',
+    width: 1366,
+    height: 900,
+    minWidth: 720,
+    minHeight: 520,
+    title: 'Foco Total',
+    backgroundColor: '#f7f5ef',
     show: false,
     webPreferences: {
       preload: join(__dirname, '../../preload/main-preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      autoplayPolicy: 'no-user-gesture-required',
     },
   });
   onCreated?.(window);

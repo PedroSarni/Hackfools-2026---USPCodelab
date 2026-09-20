@@ -9,7 +9,7 @@ import type { AttentionEstimate, VisionObservation } from './types';
 import { VisionController } from './vision-controller';
 
 const STATUS_LABEL: Record<AttentionSignal['status'], string> = {
-  screen: 'Provavelmente olhando para a tela',
+  screen: 'Você está presente',
   down: 'Cabeça inclinada para baixo',
   away: 'Fora da direção frontal',
   absent: 'Rosto não detectado',
@@ -27,9 +27,10 @@ export function CameraView(): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<CameraController | null>(null);
   const visionRef = useRef<VisionController | null>(null);
+  const visionInitializationRef = useRef<Promise<void> | null>(null);
   const estimatorRef = useRef(new AttentionEstimator());
   const calibrationRef = useRef(new CalibrationSession());
-  const [preferences, setPreferences] = useState<CameraPreferences>({ mirrored: true, diagnostics: true });
+  const [preferences, setPreferences] = useState<CameraPreferences>({ mirrored: true, diagnostics: false });
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [active, setActive] = useState(false);
   const [modelReady, setModelReady] = useState(false);
@@ -38,6 +39,7 @@ export function CameraView(): React.JSX.Element {
   const [estimate, setEstimate] = useState<AttentionEstimate>(() => estimatorRef.current.unavailable());
   const [calibration, setCalibration] = useState<CalibrationProgress>(INITIAL_PROGRESS);
   const [reaction, setReaction] = useState<FredReaction | null>(null);
+  const [showControls, setShowControls] = useState(false);
 
   const publishUnavailable = useCallback((): void => {
     const next = estimatorRef.current.unavailable();
@@ -67,7 +69,11 @@ export function CameraView(): React.JSX.Element {
     };
     cameraRef.current = camera;
 
-    window.baiStudyCamera?.getPreferences().then(setPreferences).catch(() => undefined);
+    window.baiStudyCamera?.getPreferences().then((stored) => {
+      const clean = { ...stored, diagnostics: false };
+      setPreferences(clean);
+      return window.baiStudyCamera?.updatePreferences({ diagnostics: false });
+    }).catch(() => undefined);
     const unsubscribe = window.baiStudyCamera?.onFredReaction((nextReaction) => {
       setReaction(nextReaction);
       window.setTimeout(() => setReaction((current) => current?.reactionId === nextReaction.reactionId ? null : current), 5_000);
@@ -85,14 +91,31 @@ export function CameraView(): React.JSX.Element {
   }, [preferences.diagnostics]);
 
   const ensureVision = async (): Promise<void> => {
+    if (visionInitializationRef.current) return visionInitializationRef.current;
     if (visionRef.current) return;
     const video = videoRef.current;
     if (!video) return;
-    const vision = new VisionController(video, handleObservation, (message) => setError(`Detector: ${message}`));
+    const vision = new VisionController(video, handleObservation, (message) => {
+      if (visionRef.current === vision) {
+        visionRef.current.dispose();
+        visionRef.current = null;
+        setModelReady(false);
+      }
+      setError(`Detector: ${message}`);
+    });
     visionRef.current = vision;
-    await vision.initialize();
-    vision.setDiagnostics(preferences.diagnostics);
-    setModelReady(true);
+    const initialization = vision.initialize().then(() => {
+      vision.setDiagnostics(preferences.diagnostics);
+      setModelReady(true);
+    }).catch((caught) => {
+      if (visionRef.current === vision) visionRef.current = null;
+      vision.dispose();
+      throw caught;
+    }).finally(() => {
+      if (visionInitializationRef.current === initialization) visionInitializationRef.current = null;
+    });
+    visionInitializationRef.current = initialization;
+    return initialization;
   };
 
   const startCamera = async (deviceId = preferences.deviceId): Promise<void> => {
@@ -116,14 +139,6 @@ export function CameraView(): React.JSX.Element {
     }
   };
 
-  const stopCamera = (): void => {
-    visionRef.current?.stop();
-    cameraRef.current?.stop();
-    setActive(false);
-    setObservation(null);
-    publishUnavailable();
-  };
-
   const updatePreferences = async (patch: Partial<CameraPreferences>): Promise<void> => {
     const next = { ...preferences, ...patch };
     setPreferences(next);
@@ -140,6 +155,11 @@ export function CameraView(): React.JSX.Element {
     if (active) await startCamera(deviceId);
   };
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void startCamera(); }, 80);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const beginCalibration = (): void => {
     estimatorRef.current.clearCalibration();
     calibrationRef.current.begin();
@@ -147,13 +167,15 @@ export function CameraView(): React.JSX.Element {
   };
 
   const closeWindow = async (): Promise<void> => {
-    stopCamera();
-    visionRef.current?.dispose();
+    visionRef.current?.stop();
+    cameraRef.current?.stop();
+    setActive(false);
+    publishUnavailable();
     await window.baiStudyCamera?.closeWindow();
   };
 
   return (
-    <main className="camera-view">
+    <main className="camera-view camera-view--compact">
       <div className="video-stage">
         <video
           ref={videoRef}
@@ -163,21 +185,23 @@ export function CameraView(): React.JSX.Element {
           aria-label="Prévia da câmera"
         />
         {preferences.diagnostics && <DiagnosticOverlay observation={observation} mirrored={preferences.mirrored} />}
+        {error && <p className="camera-error" role="alert">{error}</p>}
         {!active && (
           <div className="camera-empty">
             <span className="camera-icon" aria-hidden="true">●</span>
-            <h1>Câmera desligada</h1>
-            <p>A captura só começa depois da sua ação e termina ao desligar ou fechar esta janela.</p>
-            <button type="button" className="primary-button primary-button--light" onClick={() => void startCamera()}>
-              Ativar câmera
-            </button>
+            <h1>Ligando fiscalização…</h1>
+            <p>Freddy está procurando sua webcam.</p>
           </div>
         )}
 
         <div className="status-pill" data-status={active ? estimate.signal.status : 'off'}>
           <span />
-          {!active ? 'Câmera desligada' : !modelReady ? 'Carregando detector local' : STATUS_LABEL[estimate.signal.status]}
+          {!active ? 'Câmera obrigatória' : !modelReady ? 'Detector carregando' : STATUS_LABEL[estimate.signal.status]}
         </div>
+
+        <button className="camera-minimize" type="button" title="Minimizar sem desligar" aria-label="Minimizar câmera" onClick={() => void window.baiStudyCamera?.minimizeWindow()}>—</button>
+        <button className="camera-settings-button" type="button" aria-label="Configurações da câmera" onClick={() => setShowControls((value) => !value)}>⚙</button>
+        <button className="camera-close-compact" type="button" aria-label="Fechar câmera" title="Fechar câmera" onClick={() => void closeWindow()}>×</button>
 
         {active && preferences.diagnostics && (
           <aside className="diagnostic-panel">
@@ -196,19 +220,14 @@ export function CameraView(): React.JSX.Element {
 
         {reaction && (
           <div className="reaction-toast">
-            <span>EVENTO PARA FRED · VISUAL AINDA NÃO IMPLEMENTADO</span>
+            <span>EVENTO ENVIADO AO FRED</span>
             {reaction.message}
           </div>
         )}
       </div>
 
-      <section className="camera-controls" aria-label="Controles da câmera">
+      {showControls && <section className="camera-controls camera-controls--floating" aria-label="Controles da câmera">
         <div className="control-row">
-          {active ? (
-            <button type="button" onClick={stopCamera}>Desativar câmera</button>
-          ) : (
-            <button type="button" onClick={() => void startCamera()}>Ativar câmera</button>
-          )}
           <label>
             <span>Dispositivo</span>
             <select
@@ -240,27 +259,11 @@ export function CameraView(): React.JSX.Element {
             />
             Diagnóstico
           </label>
-          <button className="close-button" type="button" onClick={() => void closeWindow()} aria-label="Fechar janela">
-            Fechar
-          </button>
         </div>
 
-        <CalibrationPanel
-          progress={calibration}
-          cameraActive={active && modelReady}
-          onBegin={beginCalibration}
-          onCapture={() => {
-            calibrationRef.current.startCapture();
-            setCalibration(calibrationRef.current.getProgress());
-          }}
-          onSkipSides={() => {
-            const profile = calibrationRef.current.skipSides();
-            if (profile) estimatorRef.current.setCalibration(profile);
-            setCalibration(calibrationRef.current.getProgress());
-          }}
-        />
+        <p>Detecção automática de presença. Não é necessário calibrar.</p>
         {error && <p className="camera-error" role="alert">{error}</p>}
-      </section>
+      </section>}
     </main>
   );
 }

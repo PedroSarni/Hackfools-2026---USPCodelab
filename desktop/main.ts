@@ -1,27 +1,28 @@
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
-import { join, relative, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { app, BrowserWindow, net, protocol, session } from 'electron';
-import { registerHandlers } from './ipc/register-handlers';
-import { SettingsService } from './services/settings-service';
 import { ReelsService } from './services/reels-service';
 import { parseByteRange } from './services/media-range';
+import { existsSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { app, BrowserWindow, Menu, net, protocol, screen, session, Tray } from 'electron';
+import { FredRuntime } from './fred/fred-runtime';
+import { registerHandlers } from './ipc/register-handlers';
+import { AcademyService } from './services/academy-service';
+import { SettingsService } from './services/settings-service';
 import { createCameraWindow } from './windows/camera-window';
-import { createInstagramWindow } from './windows/instagram-window';
 import { createMainWindow } from './windows/main-window';
 
 let mainWindow: BrowserWindow | null = null;
 let cameraWindow: BrowserWindow | null = null;
-let instagramWindow: BrowserWindow | null = null;
+let fred: FredRuntime | null = null;
+let tray: Tray | null = null;
 const trustedWebContentsIds = new Set<number>();
 let disposeHandlers: (() => void) | undefined;
-
-// Alguns drivers Linux falham ao importar frames H.264 como buffers GBM e
-// derrubam o pipeline de mídia. O Chromium continua renderizando normalmente,
-// mas decodifica os vídeos locais por software, de forma mais previsível.
-app.commandLine.appendSwitch('disable-accelerated-video-decode');
+const nativeWayland = process.platform === 'linux' &&
+  (app.commandLine.getSwitchValue('ozone-platform') === 'wayland' ||
+    (!app.commandLine.hasSwitch('ozone-platform') && process.env.XDG_SESSION_TYPE === 'wayland'));
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -168,6 +169,7 @@ function configureMediaPermission(): void {
 
 async function openCameraWindow(): Promise<void> {
   if (cameraWindow && !cameraWindow.isDestroyed()) {
+    if (cameraWindow.isMinimized()) cameraWindow.restore();
     cameraWindow.show();
     cameraWindow.focus();
     return;
@@ -177,65 +179,83 @@ async function openCameraWindow(): Promise<void> {
     trust(window);
   });
   cameraWindow = createdCameraWindow;
-  cameraWindow.once('closed', () => {
-    cameraWindow = null;
-  });
+  cameraWindow.once('closed', () => { cameraWindow = null; });
 }
 
-async function openInstagramWindow(): Promise<void> {
-  if (instagramWindow && !instagramWindow.isDestroyed()) {
-    instagramWindow.show();
-    instagramWindow.focus();
+async function openMainWindow(): Promise<void> {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
     return;
   }
-  const createdInstagramWindow = await createInstagramWindow(mainWindow ?? undefined, (window) => {
-    instagramWindow = window;
+  mainWindow = await createMainWindow((window) => {
+    mainWindow = window;
     trust(window);
   });
-  instagramWindow = createdInstagramWindow;
-  instagramWindow.once('closed', () => {
-    instagramWindow = null;
+  mainWindow.once('closed', () => { mainWindow = null; });
+}
+
+function createTray(): void {
+  const developmentIcon = resolve(__dirname, '../../public/fred/tray.png');
+  const builtIcon = resolve(__dirname, '../../dist-renderer/fred/tray.png');
+  const icon = existsSync(builtIcon) ? builtIcon : developmentIcon;
+  if (!existsSync(icon)) return;
+  tray = new Tray(icon);
+  tray.setToolTip('Foco Total — fiscal de estudos');
+  tray.on('click', () => void openMainWindow());
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Abrir Foco Total', click: () => void openMainWindow() },
+    { label: 'Mostrar Freddy', click: () => fred?.show() },
+    { label: 'Esconder Freddy', click: () => fred?.hide() },
+    { type: 'separator' },
+    { label: 'Sair do Foco Total', click: () => app.quit() },
+  ]));
+}
+
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => void openMainWindow());
+  void app.whenReady().then(async () => {
+    configureAppProtocol(new ReelsService(join(app.getAppPath(), 'assets', 'reels')));
+    configureMediaPermission();
+
+    const settings = new SettingsService(join(app.getPath('userData'), 'settings.json'));
+    const academy = new AcademyService(join(app.getPath('userData'), 'academy.json'));
+    await Promise.all([settings.load(), academy.load()]);
+
+    fred = new FredRuntime(settings, screen, nativeWayland, () => [mainWindow, cameraWindow]);
+    disposeHandlers = registerHandlers({
+      academy,
+      settings,
+      trustedWebContentsIds,
+      getCameraWindow: () => cameraWindow,
+      getMainWindow: () => mainWindow,
+      openCameraWindow,
+      fred,
+    });
+
+    await fred.start(trust);
+    await openMainWindow();
+
+    createTray();
+
+    app.on('activate', () => void openMainWindow());
+  }).catch((error) => {
+    console.error('Falha ao iniciar o Foco Total.', error);
+    app.quit();
   });
 }
 
-app.whenReady().then(async () => {
-  const reelsDirectory = app.isPackaged
-    ? join(process.resourcesPath, 'assets', 'reels')
-    : join(app.getAppPath(), 'assets', 'reels');
-  const reels = new ReelsService(reelsDirectory);
-  configureAppProtocol(reels);
-  configureMediaPermission();
-  const settings = new SettingsService(join(app.getPath('userData'), 'settings.json'));
-  await settings.load();
-
-  disposeHandlers = registerHandlers({
-    settings,
-    reels,
-    trustedWebContentsIds,
-    getCameraWindow: () => cameraWindow,
-    getInstagramWindow: () => instagramWindow,
-    openCameraWindow,
-    openInstagramWindow,
-  });
-
-  mainWindow = await createMainWindow(trust);
-  mainWindow.once('closed', () => {
-    mainWindow = null;
-  });
-
-  app.on('activate', async () => {
-    if (!mainWindow) {
-      mainWindow = await createMainWindow(trust);
-    }
-  });
-});
-
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin' && (!fred?.getWindow() || fred.getWindow()?.isDestroyed())) app.quit();
 });
 
 app.on('before-quit', () => {
   disposeHandlers?.();
+  fred?.dispose();
+  tray?.destroy();
   cameraWindow?.close();
-  instagramWindow?.close();
 });

@@ -1,15 +1,17 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import type { CameraPreferences } from '../../shared/contracts';
+import type { CameraPreferences, FredPreferences } from '../../shared/contracts';
 
 interface SettingsFile {
   schemaVersion: 1;
   camera: CameraPreferences;
+  fred: FredPreferences;
 }
 
 const DEFAULTS: SettingsFile = {
   schemaVersion: 1,
   camera: { mirrored: true, diagnostics: true },
+  fred: { voiceEnabled: true },
 };
 
 export class SettingsService {
@@ -28,6 +30,7 @@ export class SettingsService {
             diagnostics: parsed.camera.diagnostics !== false,
             ...(typeof parsed.camera.deviceId === 'string' ? { deviceId: parsed.camera.deviceId } : {}),
           },
+          fred: { voiceEnabled: parsed.fred?.voiceEnabled !== false },
         };
       }
     } catch (error) {
@@ -48,6 +51,16 @@ export class SettingsService {
     }
     await this.save();
     return this.getCameraPreferences();
+  }
+
+  getFredPreferences(): FredPreferences {
+    return { ...this.state.fred };
+  }
+
+  async updateFredPreferences(patch: Partial<FredPreferences>): Promise<FredPreferences> {
+    this.state.fred = { ...this.state.fred, ...patch };
+    await this.save();
+    return this.getFredPreferences();
   }
 
   private async save(): Promise<void> {
