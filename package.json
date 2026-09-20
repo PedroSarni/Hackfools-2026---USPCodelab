@@ -1,0 +1,41 @@
+{
+  "name": "baistudy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BaiStudy — protótipo desktop das etapas 2 e 3 (câmera e sinais de atenção)",
+  "main": "dist-electron/desktop/main.js",
+  "scripts": {
+    "assets:prepare": "node scripts/prepare-mediapipe-assets.mjs",
+    "electron:install": "install-electron --no",
+    "postinstall": "npm run electron:install && npm run assets:prepare",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "build:renderer": "vite build",
+    "build": "npm run assets:prepare && npm run typecheck && npm run build:electron && npm run build:renderer",
+    "start": "npm run build && node scripts/run-electron.mjs .",
+    "dev": "npm run assets:prepare && npm run build:electron && concurrently -k \"vite --host 127.0.0.1\" \"wait-on tcp:127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 node scripts/run-electron.mjs .\"",
+    "typecheck": "tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.0.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "44.4.3",
+    "typescript": "7.0.2",
+    "vite": "8.3.0",
+    "vitest": "5.0.1",
+    "wait-on": "^9.0.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
