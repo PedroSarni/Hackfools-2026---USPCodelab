@@ -2,7 +2,20 @@
 
 ## Escopo presente
 
-Esta árvore implementa as etapas 2 e 3. A janela principal é apenas um lançador técnico da câmera. Não há janela, imagem, animação nem posicionamento do Fred; `fred:reaction` é um contrato de integração marcado como `pending-fred`.
+Esta árvore preserva etapas 2/3 e acrescenta planejamento, carteira e loja das etapas 7/8 com dependências indisponíveis explícitas. A janela principal é a interface acadêmica. Fred continua ausente; `fred:reaction` permanece como contrato futuro `pending-fred`.
+
+### Domínio acadêmico
+
+- `shared/academy.ts`: contratos, catálogo, regras centralizadas e transições puras validadas. Renderer não escolhe preço, saldo ou recompensa.
+- `desktop/services/academy-service.ts`: fonte de verdade, snapshots, fila serial e gravação temporária + rename. Só publica estado após salvar; falha de leitura não sobrescreve arquivo existente.
+- `preload/main-preload.ts`: `getAcademy` e `updateAcademy`, restritos a dois canais; nenhum acesso genérico a arquivos/comandos.
+- `desktop/ipc/register-handlers.ts`: valida origem/frame e exige a janela principal nos canais acadêmicos. A câmera não acessa carteira.
+- `src/app/App.tsx`: navegação, resumo derivado, formulários, calendário e loja; snapshots confirmados após mutações, erros visíveis.
+- `src/styles/academy.css`: visual escopado, temas via variáveis CSS, preservando estilos da câmera.
+
+Persistência: `app.getPath('userData')/academy.json`, versão 1, separado de `settings.json`. Sem mídia, frames ou landmarks. Saldo é a soma das transações. IDs `mission-<id>` e `purchase-<id>` impedem recompensas/compras duplicadas. Excluir missão preserva o histórico. Lock de instância única impede dois processos independentes de sobrescreverem a mesma carteira.
+
+Integração futura do leitor: verificar minutos/páginas no processo principal usando o serviço de estudo; nunca aceitar progresso arbitrário do renderer. Habilitar itens somente com efeitos implementados. Reações de estudo devem passar pelo futuro controlador do Fred.
 
 ```text
 desktop/
@@ -18,7 +31,7 @@ shared/
   contracts.ts                   tipos serializáveis entre processos
   events.ts                      canais IPC permitidos
 src/
-  app/App.tsx                    lançador mínimo, não é a Etapa 4
+  app/App.tsx                    painel, planejamento, progresso, carteira e loja
   camera/CameraView.tsx          interface e coordenação da webcam
   camera/camera-controller.ts    tracks, dispositivos e erros da webcam
   camera/vision-worker.ts        backend preferencial para MediaPipe

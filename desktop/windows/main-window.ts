@@ -4,8 +4,8 @@ import { loadRenderer } from './load-renderer';
 
 export async function createMainWindow(onCreated?: (window: BrowserWindow) => void): Promise<BrowserWindow> {
   const window = new BrowserWindow({
-    width: 920,
-    height: 650,
+    width: 1366,
+    height: 900,
     minWidth: 720,
     minHeight: 520,
     title: 'BaiStudy',

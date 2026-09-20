@@ -1,48 +1,97 @@
-import { useEffect, useState } from 'react';
-import type { AppInfo } from '../../shared/contracts';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { balanceOf, CATALOG, MISSION_REWARD, type AcademyAction, type AcademyState, type Deadline, type Mission, type Subject } from '../../shared/academy';
+import '../styles/academy.css';
 
+type Page = 'Hoje' | 'Plano de estudos' | 'Progresso' | 'Loja';
+type Editor = { kind: 'subject'; value?: Subject } | { kind: 'mission'; value?: Mission } | { kind: 'deadline'; value?: Deadline } | { kind: 'profile' } | { kind: 'help' };
+const localDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const prettyDate = (d: string) => new Date(d).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+function Icon({ name = 'leaf' }: { name?: string }): React.JSX.Element {
+ const paths: Record<string, ReactNode> = {
+  leaf: <><path d="M12 21V9M12 14C4 15 3 9 4 6c5-1 9 2 8 8ZM12 10c0-6 4-8 8-7 1 5-2 8-8 7ZM7 21h10"/></>,
+  coin: <><circle cx="9" cy="14" r="6"/><circle cx="16" cy="8" r="5"/><path d="M9 11v6m7-12v6"/></>,
+  book: <path d="M3 4h7l2 2 2-2h7v15h-7l-2 2-2-2H3ZM12 6v15"/>,
+  user: <><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></>,
+  arrow: <path d="m14 6-6 6 6 6M8 12h13"/>, check: <path d="m5 12 4 4L19 6"/>, spark: <path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/>,
+ };
+ return <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.book}</svg>;
+}
+function Modal({ title, close, children }: { title: string; close(): void; children: ReactNode }): React.JSX.Element {
+ const ref = useRef<HTMLDialogElement>(null);
+ useEffect(() => { const dialog = ref.current!; dialog.showModal(); return () => dialog.close(); }, []);
+ return <dialog ref={ref} className="bs-dialog" aria-label={title} onCancel={close}><div className="dialog-head"><h2>{title}</h2><button type="button" aria-label="Fechar" onClick={close}>×</button></div>{children}</dialog>;
+}
 export function App(): React.JSX.Element {
-  const [info, setInfo] = useState<AppInfo | null>(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    window.baiStudyMain?.getAppInfo().then(setInfo).catch(() => setError('A ponte segura do Electron não respondeu.'));
-  }, []);
-
-  const openCamera = async (): Promise<void> => {
-    try {
-      setError('');
-      await window.baiStudyMain?.openCamera();
-    } catch {
-      setError('Não foi possível abrir a janela da câmera.');
-    }
-  };
-
-  return (
-    <main className="launcher">
-      <section className="launcher__content">
-        <p className="eyebrow">BAISTUDY · PROTÓTIPO TÉCNICO</p>
-        <h1>Câmera e sinais de atenção</h1>
-        <p className="launcher__lead">
-          As etapas 2 e 3 estão isoladas nesta versão: prévia da webcam, calibração pessoal e estimativa local de orientação da cabeça.
-        </p>
-        <button className="primary-button" type="button" onClick={openCamera}>
-          Abrir câmera
-        </button>
-        {error && <p className="error-message">{error}</p>}
-      </section>
-
-      <aside className="scope-card" aria-label="Escopo desta versão">
-        <span className="scope-card__number">02—03</span>
-        <h2>Escopo deliberado</h2>
-        <ul>
-          <li>Imagem e análise ficam no dispositivo.</li>
-          <li>Nenhum frame é gravado ou transmitido.</li>
-          <li>“Qualidade” não significa probabilidade de distração.</li>
-          <li>Fred ainda não é renderizado nesta versão.</li>
-        </ul>
-        {info && <small>Versão {info.version}</small>}
-      </aside>
-    </main>
-  );
+ const [state, setState] = useState<AcademyState | null>(null);
+ const [page, setPage] = useState<Page>('Hoje'); const [editor, setEditor] = useState<Editor | null>(null);
+ const [notice, setNotice] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
+ const [filter, setFilter] = useState('Todos'); const [preview, setPreview] = useState<string>('lavender');
+ const [calendar, setCalendar] = useState(false); const [month, setMonth] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+ useEffect(() => { window.scrollTo({ top: 0 }); }, [page]);
+ useEffect(() => {
+  if (!window.baiStudyMain) { setError('Abra este aplicativo pelo Electron para acessar seus dados.'); return; }
+  window.baiStudyMain.getAcademy().then(setState).catch(e => setError(String(e)));
+ }, []);
+ async function dispatch(action: AcademyAction, message = 'Alterações salvas.'): Promise<boolean> {
+  if (busy || !window.baiStudyMain) return false;
+  setBusy(true); setError('');
+  try { setState(await window.baiStudyMain.updateAcademy(action)); setNotice(message); return true; }
+  catch (e) { setError(e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']+': Error: /, '') : String(e)); return false; }
+  finally { setBusy(false); }
+ }
+ async function camera(): Promise<void> { try { await window.baiStudyMain?.openCamera(); } catch { setError('Não foi possível abrir a câmera.'); } }
+ if (!state) return <main className="bs loading"><Icon/><h1>BaiStudy</h1><p>{error || 'Preparando seu espaço de estudos…'}</p></main>;
+ const today = localDate(new Date()); const balance = balanceOf(state);
+ const subjectName = (id: string) => state.subjects.find(s => s.id === id)?.name || 'Sem matéria';
+ const urgent = [...state.deadlines].filter(d => new Date(d.due).getTime() >= Date.now() && new Date(d.due).getTime() - Date.now() < 7 * 86400000).sort((a,b) => a.due.localeCompare(b.due));
+ const prioritySubjects = new Set(urgent.map(d => d.subjectId));
+ const missions = [...state.missions].sort((a, b) => Number(Boolean(a.completedAt)) - Number(Boolean(b.completedAt)) || Number(prioritySubjects.has(b.subjectId)) - Number(prioritySubjects.has(a.subjectId)) || a.due.localeCompare(b.due));
+ const dayMissions = missions.filter(m => m.due.slice(0, 10) <= today && (!m.completedAt || localDate(new Date(m.completedAt)) === today));
+ const completed = dayMissions.filter(m => m.completedAt).length; const percent = dayMissions.length ? Math.round(completed / dayMissions.length * 100) : 0;
+ const planned = missions.filter(m => !m.completedAt && m.criterion === 'minutes' && m.due.slice(0, 10) <= today).reduce((sum, m) => sum + m.target, 0);
+ const selected = CATALOG.find(i => i.id === preview)!;
+ const weekStart = new Date(); weekStart.setHours(0, 0, 0, 0); weekStart.setDate(weekStart.getDate() - (weekStart.getDay() + 6) % 7);
+ const week = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(d.getDate() + i); return { date: localDate(d), label: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'][i], count: state.missions.filter(m => m.completedAt && localDate(new Date(m.completedAt)) === localDate(d)).length }; });
+ const chart = <section className="panel weekly"><div className="section-heading"><div><p className="kicker">SEU COMPASSO</p><h2>Progresso da semana</h2></div><p>Missões concluídas por autodeclaração em cada dia.</p></div><div className="chart">{week.map(d => <div className={d.date === today ? 'current' : ''} key={d.date}><div className="bar-space"><span className="bar" style={{ height: `${d.count ? Math.max(12, d.count / Math.max(1, ...week.map(w => w.count)) * 100) : 0}%` }} title={`${d.count} missões`}>{d.count > 0 && d.count}</span></div><small>{d.label}</small></div>)}</div></section>;
+ function missionRow(m: Mission): React.JSX.Element { return <div className={`mission-row ${m.completedAt ? 'done' : ''}`} key={m.id}><button className="check-circle" disabled={busy || Boolean(m.completedAt)} aria-label={`Concluir ${m.title}`} onClick={() => { void dispatch({ type: 'mission.complete', id: m.id }, `Missão concluída por autodeclaração. +${MISSION_REWARD} Study Coins!`); }}>{m.completedAt && <Icon name="check"/>}</button><div className="mission-copy"><strong>{m.title}</strong><small>{subjectName(m.subjectId)} · {prettyDate(m.due)}{m.criterion !== 'manual' && ` · 0/${m.target} ${m.criterion === 'minutes' ? 'min' : 'páginas'}`}</small>{m.material && <small>Referência: {m.material}{m.pages && ` · p. ${m.pages}`}</small>}</div><span className="pill">{m.completedAt ? 'Autodeclarada' : 'A fazer'}</span>{page === 'Plano de estudos' && <div className="row-tools">{!m.completedAt && <button aria-label={`Editar ${m.title}`} onClick={() => setEditor({ kind: 'mission', value: m })}>Editar</button>}<button aria-label={`Excluir ${m.title}`} onClick={() => { if (confirm('Excluir esta missão? O histórico de moedas será preservado.')) void dispatch({ type: 'mission.delete', id: m.id }); }}>Excluir</button></div>}</div>; }
+ async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
+  event.preventDefault(); if (!editor) return;
+  const form = new FormData(event.currentTarget); const value = (key: string) => String(form.get(key) || '');
+  let action: AcademyAction;
+  if (editor.kind === 'subject') action = { type: 'subject.save', value: { id: editor.value?.id || crypto.randomUUID(), name: value('name'), color: value('color') } };
+  else if (editor.kind === 'profile') action = { type: 'profile.save', value: { name: value('name'), availableMinutes: Number(value('availableMinutes')) } };
+  else if (editor.kind === 'mission') action = { type: 'mission.save', value: { id: editor.value?.id || crypto.randomUUID(), title: value('title'), subjectId: value('subjectId'), due: value('due'), criterion: value('criterion') as Mission['criterion'], target: Number(value('target')), material: value('material'), pages: value('pages'), completedAt: null } };
+  else if (editor.kind === 'deadline') action = { type: 'deadline.save', value: { id: editor.value?.id || crypto.randomUUID(), title: value('title'), subjectId: value('subjectId'), due: value('due'), content: value('content'), material: value('material'), pages: value('pages'), notes: value('notes'), priority: value('priority') as Deadline['priority'] } };
+  else return;
+  if (await dispatch(action)) setEditor(null);
+ }
+ return <div className={`bs theme-${state.equipped || 'sage'}`}>
+  <header className="topbar"><div className="topbar-inner"><button className="brand" onClick={() => setPage('Hoje')}><span><Icon/></span>BaiStudy</button><nav aria-label="Navegação principal">{(['Hoje', 'Plano de estudos', 'Progresso', 'Loja'] as Page[]).map(p => <button key={p} className={page === p ? 'active' : ''} onClick={() => setPage(p)}>{p}</button>)}</nav><button className="profile-button" onClick={() => setEditor({ kind: 'profile' })}><Icon name="user"/> Perfil</button></div></header>
+  {(notice || error) && <div className={`notification ${error ? 'is-error' : ''}`} role={error ? 'alert' : 'status'}>{error || notice}<button aria-label="Fechar mensagem" onClick={() => { setNotice(''); setError(''); }}>×</button></div>}
+  {page === 'Hoje' && <main className="content"><section className="intro"><p className="kicker">UM PASSO DE CADA VEZ, {state.profile.name.toUpperCase()}</p><h1>Sua meta de hoje começa agora.</h1><p>Um pouco de foco, uma conquista de cada vez.<br/>Seu próximo passo está aqui.</p></section>
+   <section className="panel summary"><div className="section-heading"><div><p className="kicker">RESUMO DO DIA</p><h2 className="date-title">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</h2></div><span className="percentage">{percent}% <span>concluído</span></span></div><progress max="100" value={percent}/><div className="stats"><div><strong>{completed} de {dayMissions.length}</strong><small>missões do dia concluídas</small></div><div><strong>{state.profile.availableMinutes} min</strong><small>disponíveis por dia</small></div><div><strong>{balance}</strong><small>Study Coins no seu saldo</small></div></div></section>
+   {urgent.length > 0 && <div className="exam-banner"><Icon name="book"/><div><strong>Semana de prova: {urgent[0].title}</strong><p>{prettyDate(urgent[0].due)} · {subjectName(urgent[0].subjectId)}. As missões desta matéria aparecem primeiro.</p></div><button onClick={() => setPage('Plano de estudos')}>Ver prazos →</button></div>}
+   {planned > state.profile.availableMinutes && <p className="warning">Seu plano pede {planned} minutos, mas você informou {state.profile.availableMinutes} minutos disponíveis hoje. Reorganize os prazos.</p>}
+   <div className="dashboard-grid"><section className="panel"><div className="section-heading"><div><h2>O que estudar hoje</h2><p>Suas missões de hoje e os passos que ficaram pendentes.</p></div><button className="small-add" aria-label="Nova missão" onClick={() => setEditor({ kind: 'mission' })}>+</button></div>{dayMissions.length ? dayMissions.map(missionRow) : <div className="empty"><span className="empty-icon"><Icon name="book"/></span><h3>Todo começo cabe em um passo.</h3><p>Adicione uma missão para montar seu plano de hoje.</p><button className="primary" onClick={() => setEditor({ kind: 'mission' })}>Criar primeira missão</button></div>}</section>
+   <section className="panel goal"><p className="kicker">PEQUENAS CONQUISTAS</p><h2>Seu ritmo de hoje</h2><div className="goal-display"><div className="ring" style={{ background: `conic-gradient(var(--accent) ${percent}%, #e0eae6 0)` }}><div><strong>{percent}%</strong><small>do plano</small></div></div><div><strong>{completed}<span> / {dayMissions.length}</span></strong><p>missões concluídas</p></div></div><p>{dayMissions.length ? `Faltam ${dayMissions.length - completed} missões para concluir seu plano.` : 'Seu progresso aparece quando você cria suas missões.'}</p><progress max="100" value={percent}/><div className="button-row"><button className="primary" onClick={() => setPage('Plano de estudos')}>Ver meu plano</button><button onClick={() => setEditor({ kind: 'mission' })}>Adicionar missão</button></div><small>+{MISSION_REWARD} moedas por missão autodeclarada. Sem dinheiro real.</small></section></div>
+   {chart}<section className="next-step"><div><p className="kicker">PRÓXIMO PASSO</p><h2>Quer começar com uma sessão leve?</h2><p>Escolha uma missão e reserve um momento para você.</p></div><div className="button-row"><button className="primary" onClick={() => setPage('Plano de estudos')}>Organizar meus estudos</button><button onClick={() => void camera()}>Abrir câmera</button></div></section></main>}
+  {page === 'Plano de estudos' && <main className="content"><section className="intro section-heading"><div><p className="kicker">DÊ ESPAÇO AO QUE IMPORTA</p><h1>Seu plano de estudos</h1><p>Matérias, missões e prazos em um só lugar.</p></div><button className="primary" onClick={() => setEditor({ kind: 'mission' })}>+ Nova missão</button></section><section className="panel"><div className="section-heading"><h2>Suas matérias</h2><button onClick={() => setEditor({ kind: 'subject' })}>+ Adicionar matéria</button></div><div className="subjects">{state.subjects.map(s => <div className="subject" key={s.id}><span className="subject-dot" style={{ background: s.color }}><Icon name="book"/></span><div><strong>{s.name}</strong><small>{state.missions.filter(m => m.subjectId === s.id && !m.completedAt).length} missões pendentes</small></div><button onClick={() => setEditor({ kind: 'subject', value: s })}>Editar</button><button aria-label={`Excluir ${s.name}`} onClick={() => { if (confirm('Excluir matéria? Missões e prazos serão mantidos sem matéria.')) void dispatch({ type: 'subject.delete', id: s.id }); }}>×</button></div>)}{!state.subjects.length && <p className="empty-line">Adicione sua primeira matéria para organizar a semana.</p>}</div></section>
+   <section className="panel"><div className="section-heading"><div><p className="kicker">UM PASSO DE CADA VEZ</p><h2>Missões</h2></div><span className="pill">{missions.filter(m => !m.completedAt).length} pendentes</span></div>{missions.length ? missions.map(missionRow) : <p className="empty-line">Nenhuma missão cadastrada. Crie uma tarefa com prazo e critério de conclusão.</p>}<p className="fineprint">Tarefas externas são autodeclaradas. Minutos e páginas exigem registros do leitor, ainda não disponível nesta base. Referências de PDF são anotações, não arquivos importados.</p></section>
+   <section className="panel"><div className="section-heading"><div><p className="kicker">NO SEU RADAR</p><h2>Provas e entregas</h2></div><div className="button-row"><button onClick={() => setCalendar(!calendar)}>{calendar ? 'Ver lista' : 'Ver calendário'}</button><button className="primary" onClick={() => setEditor({ kind: 'deadline' })}>+ Novo prazo</button></div></div>
+    {calendar ? <><div className="calendar-title"><button aria-label="Mês anterior" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>←</button><h3>{month.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h3><button aria-label="Próximo mês" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>→</button></div><div className="calendar">{['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => <strong key={d}>{d}</strong>)}{Array.from({ length: month.getDay() }, (_, i) => <div key={`blank${i}`}/>)}{Array.from({ length: new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate() }, (_, i) => { const date = localDate(new Date(month.getFullYear(), month.getMonth(), i + 1)); return <div key={date} className={date === today ? 'is-today' : ''}><span>{i + 1}</span>{state.deadlines.filter(d => d.due.slice(0, 10) === date).map(d => <button key={d.id} onClick={() => setEditor({ kind: 'deadline', value: d })}>{d.title}</button>)}</div>; })}</div></> : [...state.deadlines].sort((a,b) => a.due.localeCompare(b.due)).map(d => <article className="deadline" key={d.id}><div className="date-badge">{new Date(d.due).getDate()}<small>{new Date(d.due).toLocaleDateString('pt-BR', { month: 'short' })}</small></div><div><span className="pill">{d.priority === 'high' ? 'Alta prioridade' : 'Prazo'} · {subjectName(d.subjectId)}</span><h3>{d.title}</h3><p>{new Date(d.due).toLocaleString('pt-BR')} · {d.content || 'Conteúdo não informado'}</p>{d.material && <p>{d.material} {d.pages && `· p. ${d.pages}`}</p>}{d.notes && <p>{d.notes}</p>}</div><div className="row-tools"><button onClick={() => setEditor({ kind: 'deadline', value: d })}>Editar</button><button onClick={() => { if (confirm('Excluir este prazo?')) void dispatch({ type: 'deadline.delete', id: d.id }); }}>Excluir</button></div></article>)}{!state.deadlines.length && <p className="empty-line">Nenhum prazo por aqui. Cadastre sua próxima prova ou entrega.</p>}</section></main>}
+  {page === 'Progresso' && <main className="content"><section className="intro"><p className="kicker">CADA PASSO CONTA</p><h1>Veja o caminho que você fez.</h1><p>Conquistas registradas, sem confundir conclusão declarada com aprendizado verificado.</p></section>{chart}<section className="panel"><div className="section-heading"><h2>Seu histórico de Study Coins</h2><span className="coin-price">{balance} Study Coins</span></div>{[...state.transactions].reverse().map(t => <div className="transaction" key={t.id}><span className="empty-icon"><Icon name="coin"/></span><div><strong>{t.reason}</strong><small>{new Date(t.at).toLocaleString('pt-BR')}</small></div><strong className={t.amount > 0 ? 'positive' : ''}>{t.amount > 0 ? '+' : ''}{t.amount}</strong></div>)}{!state.transactions.length && <p className="empty-line">Seu histórico começa na primeira missão concluída.</p>}</section></main>}
+  {page === 'Loja' && <><section className="shop-hero"><div className="shop-hero-inner"><div><button className="back-button" aria-label="Voltar para hoje" onClick={() => setPage('Hoje')}><Icon name="arrow"/></button><p className="kicker">RECOMPENSAS DA SUA JORNADA</p><h1>Loja de Study Coins</h1><p>Use suas Study Coins para personalizar sua jornada de estudos.</p></div><aside className="wallet"><span className="wallet-icon"><Icon name="coin"/></span><p>Seu saldo</p><strong>{balance.toLocaleString('pt-BR')} Study Coins</strong><button className="text-button" onClick={() => setEditor({ kind: 'help' })}>Como ganhar Study Coins</button></aside></div></section><main className="content shop-content"><div className="filters">{['Todos', 'Personalização', 'Em breve'].map(f => <button className={filter === f ? 'selected' : ''} key={f} onClick={() => setFilter(f)}>{f}</button>)}</div><div className="shop-layout"><section><div className="section-heading"><div><h2>Um espaço com a sua cara</h2><p>Pequenas recompensas para acompanhar sua rotina.</p></div><span className="pill">2 itens disponíveis</span></div><div className="products">{CATALOG.filter(i => filter === 'Todos' || i.category === filter).map(i => <article className="product" key={i.id} style={{ '--item-color': i.color } as React.CSSProperties}><div className="product-art"><span className="art-circle"/><div className="mini-window"><div className="mini-top"><i/><i/><i/></div><div className="mini-body"><Icon name={i.available ? 'leaf' : i.id === 'fred' ? 'spark' : 'book'}/><div className="mini-line"/><div className="mini-line short"/><span className="mini-button"/></div></div>{!i.available && <span className="coming-label">Em breve</span>}</div><div className="product-title"><h3>{i.name}</h3><span className="coin-price">{i.price} Study Coins</span></div><p>{i.effect}</p><div className="button-row"><button onClick={() => setPreview(i.id)}>Ver item</button><button className="item-primary" disabled={busy || !i.available} onClick={() => void dispatch(state.owned.includes(i.id) ? { type: 'shop.equip', id: state.equipped === i.id ? null : i.id } : { type: 'shop.buy', id: i.id }, state.owned.includes(i.id) ? 'Personalização atualizada.' : 'Item resgatado! Clique em Equipar para ativar.')}>{!i.available ? 'Indisponível' : state.equipped === i.id ? 'Desativar' : state.owned.includes(i.id) ? 'Equipar' : 'Resgatar'}</button></div></article>)}</div></section><aside className="preview"><p className="kicker">PRÉ-VISUALIZAÇÃO</p><h2>{selected.available ? 'Seu espaço de foco' : selected.name}</h2><div className="preview-scene" style={{ '--item-color': selected.color } as React.CSSProperties}><Icon name="leaf"/><div className="preview-window"><span>Seu próximo passo</span><h3>Sua meta começa agora.</h3><div className="preview-progress"/><p>Um pouco de foco, todos os dias.</p><span className="preview-cta">Vamos estudar</span></div></div><p className="preview-caption">{selected.effect}</p><small>{state.equipped === selected.id ? 'Este tema está equipado.' : selected.available ? 'A prévia não altera seu tema. Resgate e equipe para aplicar.' : 'Não é possível comprar este item nesta versão.'}</small></aside></div><section className="wardrobe"><h2>Itens resgatados</h2><p>Suas recompensas ficam disponíveis para ativar quando quiser.</p><div className="panel">{state.owned.length ? state.owned.map(id => <div className="owned-item" key={id}><Icon name="spark"/><strong>{CATALOG.find(i => i.id === id)?.name}</strong><button disabled={busy} onClick={() => void dispatch({ type: 'shop.equip', id: state.equipped === id ? null : id })}>{state.equipped === id ? 'Desativar' : 'Equipar'}</button></div>) : <div className="empty-wardrobe"><Icon name="spark"/><p>Nenhum item resgatado ainda. Conclua suas missões e escolha sua primeira recompensa.</p></div>}</div></section></main></>}
+  <footer className="bs-footer"><span>BaiStudy · Sua aprovação é obrigatória.</span><button onClick={() => void camera()}>Câmera e calibração ↗</button></footer>
+  {editor && <Modal title={editor.kind === 'help' ? 'Suas conquistas viram recompensas' : editor.kind === 'profile' ? 'Seu perfil e seu ritmo' : `${editor.value ? 'Editar' : 'Nova'} ${editor.kind === 'subject' ? 'matéria' : editor.kind === 'mission' ? 'missão' : 'prova ou entrega'}`} close={() => setEditor(null)}>
+   {editor.kind === 'help' ? <><p>Conclua uma missão externa por autodeclaração para ganhar {MISSION_REWARD} Study Coins. Cada missão recompensa uma única vez.</p><p>Missões de tempo e páginas só poderão recompensar quando houver registros reais do leitor. Study Coins não têm valor monetário.</p><button className="primary" onClick={() => { setEditor(null); setPage('Plano de estudos'); }}>Criar meu plano</button></> : <form onSubmit={e => void submit(e)}>
+    {editor.kind === 'subject' && <><label>Nome da matéria<input name="name" required maxLength={80} defaultValue={editor.value?.name} placeholder="Ex.: Cálculo I"/></label><label>Cor<input type="color" name="color" defaultValue={editor.value?.color || '#65a692'}/></label></>}
+    {editor.kind === 'profile' && <><label>Como podemos chamar você?<input name="name" required maxLength={80} defaultValue={state.profile.name}/></label><label>Minutos disponíveis por dia<input name="availableMinutes" type="number" min="0" max="1440" required defaultValue={state.profile.availableMinutes}/></label><p className="fineprint">A disponibilidade ajuda a identificar um plano que não cabe no seu dia.</p></>}
+    {(editor.kind === 'mission' || editor.kind === 'deadline') && <><label>Título<input name="title" required maxLength={160} defaultValue={editor.value?.title} placeholder={editor.kind === 'mission' ? 'Ex.: Revisar o capítulo 3' : 'Ex.: Prova de Cálculo I'}/></label><div className="form-grid"><label>Matéria<select name="subjectId" defaultValue={editor.value?.subjectId || ''}><option value="">Sem matéria</option>{state.subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Data e horário<input type="datetime-local" name="due" required defaultValue={editor.value?.due || `${today}T18:00`}/></label></div>
+     {editor.kind === 'mission' && <><div className="form-grid"><label>Critério de conclusão<select name="criterion" defaultValue={editor.value?.criterion || 'manual'}><option value="manual">Autodeclaração (tarefa externa)</option><option value="minutes">Tempo ativo no leitor</option><option value="pages">Páginas visitadas no leitor</option></select></label><label>Quantidade (minutos ou páginas)<input name="target" type="number" required min="1" max="10000" defaultValue={editor.value?.target || 20}/></label></div><p className="fineprint">Tempo e páginas ficarão pendentes até a integração do leitor. A autodeclaração não verifica aprendizado.</p></>}
+     {editor.kind === 'deadline' && <><label>Conteúdo cobrado<textarea name="content" maxLength={2000} defaultValue={editor.value?.content}/></label><label>Prioridade<select name="priority" defaultValue={editor.value?.priority || 'normal'}><option value="normal">Normal</option><option value="high">Alta</option></select></label></>}
+     <div className="form-grid"><label>Referência do material<input name="material" maxLength={300} defaultValue={editor.value?.material} placeholder="Ex.: Apostila de Cálculo.pdf"/></label><label>Intervalos de páginas<input name="pages" maxLength={80} defaultValue={editor.value?.pages} placeholder="Ex.: 8–15, 20–24"/></label></div><small>Referência textual. Importação e abertura de PDF dependem da etapa 5.</small>
+     {editor.kind === 'deadline' && <label>Observações<textarea name="notes" maxLength={2000} defaultValue={editor.value?.notes}/></label>}</>}
+    {error && <p role="alert" className="warning">{error}</p>}<div className="dialog-actions"><button type="button" onClick={() => setEditor(null)}>Cancelar</button><button className="primary" disabled={busy} type="submit">{busy ? 'Salvando…' : 'Salvar'}</button></div></form>}
+  </Modal>}
+ </div>;
 }

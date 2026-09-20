@@ -3,6 +3,7 @@ import { pathToFileURL } from 'node:url';
 import { app, BrowserWindow, net, protocol, session } from 'electron';
 import { registerHandlers } from './ipc/register-handlers';
 import { SettingsService } from './services/settings-service';
+import { AcademyService } from './services/academy-service';
 import { createCameraWindow } from './windows/camera-window';
 import { createMainWindow } from './windows/main-window';
 
@@ -10,6 +11,13 @@ let mainWindow: BrowserWindow | null = null;
 let cameraWindow: BrowserWindow | null = null;
 const trustedWebContentsIds = new Set<number>();
 let disposeHandlers: (() => void) | undefined;
+const hasInstanceLock = app.requestSingleInstanceLock();
+if (!hasInstanceLock) app.quit();
+app.on('second-instance', () => {
+  if (mainWindow?.isMinimized()) mainWindow.restore();
+  mainWindow?.show();
+  mainWindow?.focus();
+});
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -74,26 +82,30 @@ async function openCameraWindow(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
+  if (!hasInstanceLock) return;
   configureAppProtocol();
   configureMediaPermission();
   const settings = new SettingsService(join(app.getPath('userData'), 'settings.json'));
   await settings.load();
-
-  mainWindow = await createMainWindow(trust);
-  mainWindow.once('closed', () => {
-    mainWindow = null;
-  });
+  const academy = new AcademyService(join(app.getPath('userData'), 'academy.json'));
+  await academy.load();
 
   disposeHandlers = registerHandlers({
+    academy,
+    getMainWindow: () => mainWindow,
     settings,
     trustedWebContentsIds,
     getCameraWindow: () => cameraWindow,
     openCameraWindow,
   });
 
+  mainWindow = await createMainWindow((window) => { mainWindow = window; trust(window); });
+  mainWindow.once('closed', () => { mainWindow = null; });
+
   app.on('activate', async () => {
     if (!mainWindow) {
-      mainWindow = await createMainWindow(trust);
+      mainWindow = await createMainWindow((window) => { mainWindow = window; trust(window); });
+      mainWindow.once('closed', () => { mainWindow = null; });
     }
   });
 });

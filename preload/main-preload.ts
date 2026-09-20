@@ -8,6 +8,8 @@ const IPC = {
 } as const;
 
 const bridge: MainBridge = {
+  getAcademy: () => ipcRenderer.invoke('academy:get'),
+  updateAcademy: (action) => ipcRenderer.invoke('academy:update', action),
   openCamera: () => ipcRenderer.invoke(IPC.openCamera),
   getAppInfo: () => ipcRenderer.invoke(IPC.getAppInfo),
 };

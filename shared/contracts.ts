@@ -42,6 +42,8 @@ export interface AppInfo {
 }
 
 export interface MainBridge {
+  getAcademy(): Promise<import('./academy').AcademyState>;
+  updateAcademy(action: import('./academy').AcademyAction): Promise<import('./academy').AcademyState>;
   openCamera(): Promise<void>;
   getAppInfo(): Promise<AppInfo>;
 }

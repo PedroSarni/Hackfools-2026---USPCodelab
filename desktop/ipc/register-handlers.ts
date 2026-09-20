@@ -1,4 +1,6 @@
 import { app, ipcMain, type BrowserWindow } from 'electron';
+import type { AcademyService } from '../services/academy-service';
+import type { AcademyAction } from '../../shared/academy';
 import type { AppInfo } from '../../shared/contracts';
 import { IPC } from '../../shared/events';
 import { AttentionReactionController } from '../behavior/attention-reaction-controller';
@@ -6,6 +8,8 @@ import type { SettingsService } from '../services/settings-service';
 import { assertTrustedSender, validateAttentionSignal, validatePreferencePatch } from './validate-message';
 
 interface HandlerDependencies {
+  academy: AcademyService;
+  getMainWindow(): BrowserWindow | null;
   settings: SettingsService;
   trustedWebContentsIds: Set<number>;
   getCameraWindow(): BrowserWindow | null;
@@ -15,12 +19,19 @@ interface HandlerDependencies {
 export function registerHandlers(dependencies: HandlerDependencies): () => void {
   const reactions = new AttentionReactionController();
   const channels = [
+    'academy:get', 'academy:update',
     IPC.main.openCamera,
     IPC.main.getAppInfo,
     IPC.camera.close,
     IPC.camera.getPreferences,
     IPC.camera.updatePreferences,
   ];
+  const requireMain = (event: Electron.IpcMainInvokeEvent): void => {
+    assertTrustedSender(event, dependencies.trustedWebContentsIds);
+    if (event.sender.id !== dependencies.getMainWindow()?.webContents.id) throw new Error('Origem acadêmica não autorizada.');
+  };
+  ipcMain.handle('academy:get', (event) => { requireMain(event); return dependencies.academy.getState(); });
+  ipcMain.handle('academy:update', (event, action: AcademyAction) => { requireMain(event); return dependencies.academy.dispatch(action); });
 
   ipcMain.handle(IPC.main.openCamera, async (event) => {
     assertTrustedSender(event, dependencies.trustedWebContentsIds);

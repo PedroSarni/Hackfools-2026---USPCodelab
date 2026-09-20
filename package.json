@@ -2,7 +2,7 @@
   "name": "baistudy",
   "version": "0.1.0",
   "private": true,
-  "description": "BaiStudy — protótipo desktop das etapas 2 e 3 (câmera e sinais de atenção)",
+  "description": "BaiStudy — planejamento acadêmico, missões, Study Coins, personalização e câmera local",
   "main": "dist-electron/desktop/main.js",
   "scripts": {
     "assets:prepare": "node scripts/prepare-mediapipe-assets.mjs",

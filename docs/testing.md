@@ -1,5 +1,26 @@
 # Testes e execução
 
+## Validação desta entrega (etapas 7/8)
+
+- Typecheck renderer/Electron: aprovado. Compilação Electron: aprovada.
+- 17 testes em 6 arquivos: aprovados, incluindo câmera preexistente e novas regras/persistência.
+- Serviço compilado: aprovada reabertura de arquivo temporário com saldo, compras, tema e perfil, além de operações concorrentes sem duplicação.
+- Build renderer: aprovado via API do Vite com `configFile: false`, `preserveSymlinks: true` e alias para scheduler do React. Neste ambiente, CLI padrão do Vite falha na descoberta de drives do Windows (`spawn EPERM`); o caminho programático evita essa consulta desnecessária. Vitest executado via API, pool threads e resolução preservando symlinks. Nenhum sandbox foi desativado.
+- Prévia isolada no navegador: criar duas missões, concluir, receber 100 moedas, resgatar Lavanda, saldo zero, equipar tema; cadastrar matéria e prova e confirmar a prova no calendário. Layout conferido em largura estreita e desktop.
+- Não verificado nesta entrega: webcam física, sessão nativa Electron/IPC e reinício manual das janelas. Não declarar essas validações como concluídas.
+
+### Roteiro manual acadêmico
+
+1. Execute `npm ci` e `npm start`; na cópia local com build preparado, `Iniciar.cmd` abre diretamente.
+2. Cadastre matéria, missão e prova com material/páginas como referência. Confira edição, calendário e prioridade de prova próxima.
+3. Declare duas missões externas concluídas; saldo deve ser 100. Cliques repetidos não somam moedas.
+4. Missão de 20 minutos sem registros deve recusar conclusão. O acesso ao planejamento continua livre.
+5. Compre Lavanda, equipe, veja a mudança e desative. Tente comprar Maré sem saldo: deve falhar.
+6. Reabra e confira registros/tema/histórico. Exclua matéria: missões continuam sem matéria, histórico permanece.
+7. Abra câmera pelo rodapé e confira os fluxos anteriores. Itens de mídia/Fred/descanso continuam indisponíveis até suas dependências.
+
+### Instruções anteriores da câmera
+
 ## Instalação
 
 ```bash
