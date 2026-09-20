@@ -41,9 +41,32 @@ export interface AppInfo {
   fredImplemented: false;
 }
 
+export interface ReelAsset {
+  id: string;
+  fileName: string;
+  displayName: string;
+  url: string;
+}
+
+export type ProcrastinationMilestone = 'warning' | 'limit';
+
+export interface ProcrastinationSessionState {
+  warningShown: boolean;
+  limitReached: boolean;
+}
+
 export interface MainBridge {
   openCamera(): Promise<void>;
+  openInstagram(): Promise<void>;
   getAppInfo(): Promise<AppInfo>;
+}
+
+export interface InstagramBridge {
+  closeWindow(): Promise<void>;
+  getReels(): Promise<ReelAsset[]>;
+  getProcrastinationState(): Promise<ProcrastinationSessionState>;
+  recordProcrastinationMilestone(milestone: ProcrastinationMilestone): Promise<ProcrastinationSessionState>;
+  startStudying(): Promise<void>;
 }
 
 export interface CameraBridge {
@@ -58,5 +81,6 @@ declare global {
   interface Window {
     baiStudyMain?: MainBridge;
     baiStudyCamera?: CameraBridge;
+    baiStudyInstagram?: InstagramBridge;
   }
 }

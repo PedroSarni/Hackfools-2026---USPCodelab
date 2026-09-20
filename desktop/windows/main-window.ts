@@ -4,12 +4,12 @@ import { loadRenderer } from './load-renderer';
 
 export async function createMainWindow(onCreated?: (window: BrowserWindow) => void): Promise<BrowserWindow> {
   const window = new BrowserWindow({
-    width: 920,
-    height: 650,
-    minWidth: 720,
-    minHeight: 520,
-    title: 'BaiStudy',
-    backgroundColor: '#f7f5ef',
+    width: 1180,
+    height: 760,
+    minWidth: 760,
+    minHeight: 540,
+    title: 'BaiStudy OS',
+    backgroundColor: '#0b1011',
     show: false,
     webPreferences: {
       preload: join(__dirname, '../../preload/main-preload.js'),

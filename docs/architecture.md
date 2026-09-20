@@ -2,23 +2,27 @@
 
 ## Escopo presente
 
-Esta árvore implementa as etapas 2 e 3. A janela principal é apenas um lançador técnico da câmera. Não há janela, imagem, animação nem posicionamento do Fred; `fred:reaction` é um contrato de integração marcado como `pending-fred`.
+Esta árvore implementa as etapas 2 e 3, uma área de trabalho educacional e uma distração isolada de Instagram simulado. A janela principal é o desktop do BaiStudy OS e não abre nenhum aplicativo automaticamente. Não há janela, imagem, animação nem posicionamento do Fred; `fred:reaction` é um contrato de integração marcado como `pending-fred`.
 
 ```text
 desktop/
   main.ts                         ciclo de vida, protocolo local e permissão de vídeo
-  windows/                       criação das janelas principal e de câmera
+  windows/                       janelas principal, câmera e Instagram
   ipc/                           handlers específicos e validação de origem/dados
   services/settings-service.ts   preferências persistentes da câmera
+  services/reels-service.ts      descoberta segura dos vídeos locais
+  services/media-range.ts        interpretação de requisições parciais de mídia
   behavior/                      converte transições estáveis em reação futura
 preload/
-  main-preload.ts                abrir câmera e consultar versão
+  main-preload.ts                abrir câmera/Instagram e consultar versão
   camera-preload.ts              preferências, fechamento, sinal e reação
+  instagram-preload.ts           fechar Instagram e consultar Reels
 shared/
   contracts.ts                   tipos serializáveis entre processos
   events.ts                      canais IPC permitidos
 src/
-  app/App.tsx                    lançador mínimo, não é a Etapa 4
+  app/App.tsx                    área de trabalho e despacho dos launchers
+  app/desktop-apps.ts            catálogo escalável de aplicativos
   camera/CameraView.tsx          interface e coordenação da webcam
   camera/camera-controller.ts    tracks, dispositivos e erros da webcam
   camera/vision-worker.ts        backend preferencial para MediaPipe
@@ -26,8 +30,12 @@ src/
   camera/calibration.ts          referências pessoais da sessão
   camera/attention-estimator.ts  suavização, limiares, histerese e permanência
   camera/vision-controller.ts    agenda frames e descarta trabalho atrasado
+  instagram/                     Home, navegação e feed de Reels
   styles/                        visual das duas janelas existentes
 public/models/                   modelo e runtime WASM locais
+public/desktop/                  wallpaper e ícones do desktop
+public/instagram/home.jpeg       referência estática fornecida pelo usuário
+assets/reels/                    vídeos inseridos manualmente pela equipe
 docs/                            arquitetura, progresso, teste e licenças
 ```
 
@@ -35,11 +43,51 @@ Diretórios das etapas futuras não foram criados vazios. Quando uma etapa for a
 
 ## Janelas
 
-- **Principal:** painel técnico mínimo para abrir a câmera. Não antecipa feed, PDF, loja ou planejamento.
+- **Principal:** desktop do BaiStudy OS com catálogo de aplicativos, atalhos e dock. É sempre a primeira janela.
 - **Câmera:** janela dedicada; o vídeo ocupa a maior área. Fechar ou desligar interrompe todas as tracks.
+- **Instagram:** BrowserWindow separada, frameless, com 426 × 856 px iniciais e limites verticais. Ela só é criada por um gesto no desktop. A Home é a imagem fornecida, Reels troca a área de conteúdo na mesma janela e o botão **Desktop** fecha a janela, revelando a principal.
 - **Fred:** inexistente por decisão explícita do escopo atual.
 
 Os renderers mantêm `nodeIntegration: false`, `contextIsolation: true` e `sandbox: true`. Recursos empacotados são servidos pelo protocolo seguro `app://bundle`; em desenvolvimento somente `http://127.0.0.1:5173` é aceito. Navegações e novas janelas são bloqueadas.
+
+## Fluxo do Instagram e dos Reels
+
+```text
+ícone no desktop (catálogo desktopApps)
+  → main-preload.openInstagram()
+  → IPC main:open-instagram validado
+  → BrowserWindow vertical instagram.html
+  → Home estática
+  → botão Reels
+  → instagram-preload.getReels()
+  → ReelsService enumera assets/reels
+  → metadados e URLs app://bundle/__reels__/...
+  → feed com scroll snap e índice ativo
+```
+
+As “rotas” do aplicativo são entradas Electron/Vite separadas: `index.html` representa o desktop, `instagram.html` representa o Instagram e `camera.html` representa o Foco Total. O renderer seleciona a view pelo pathname, enquanto a criação das janelas passa exclusivamente por IPCs tipados dos preloads.
+
+O renderer recebe somente `id`, nome, título derivado e URL local. Não recebe `fs`, caminho absoluto ou IPC genérico. O handler valida nome simples e extensão antes de servir o arquivo. O streaming responde `200` ou `206 Partial Content`, com `Content-Type`, `Content-Length`, `Accept-Ranges` e `Content-Range` corretos.
+
+São aceitos arquivos regulares `.mp4` e `.webm`, sem distinção de maiúsculas. Outras extensões, subpastas e tentativas de traversal são ignoradas. Para compatibilidade, MP4 deve usar H.264/AAC-LC e WebM deve usar VP8/VP9 com Opus; HEVC/H.265 não fornece imagem de forma portátil no Electron.
+
+Cada Reel ocupa 100% da área acima da navegação, preserva a proporção com `object-fit: contain` e usa `scroll-snap-stop: always`. O índice ativo acompanha scroll, setas e arraste. Somente o item ativo recebe `src`, o que evita abrir vários pipelines de decodificação ao mesmo tempo; a sincronização central pausa os demais, silencia inativos e pausa tudo em `blur` ou quando o documento fica oculto. No Linux, o Electron usa decodificação de vídeo por software para contornar falhas de importação de buffers GBM observadas em alguns drivers, sem desativar a aceleração gráfica usada pelo restante do aplicativo.
+
+### Retorno ao foco
+
+`src/instagram/reel-feed.ts` transforma os arquivos locais em itens discriminados por `type: "normal" | "study"`. As três primeiras posições são normais; a partir da quarta posição, `buildReelFeed` acrescenta pares `normal → study`. O catálogo `STUDY_REELS` contém dados serializáveis e pode receber novos cards educativos sem alterar a navegação.
+
+`ReelsFeed` usa `activeIndex + 1` como posição real exibida. Na posição 3, abre uma única vez o aviso de procrastinação. Na posição 9, abre o modal final, pausa os vídeos e bloqueia teclado, roda do mouse e arraste. Os marcos ficam na memória do processo principal por toda a execução do aplicativo, então fechar e reabrir a janela não reinicia o limite.
+
+O botão **Começar a estudar** chama uma função específica do preload; o processo principal abre uma URL fixa da playlist com `shell.openExternal` e fecha a janela do Instagram após o sucesso. O renderer nunca escolhe nem envia uma URL arbitrária.
+
+O diagnóstico percorre quatro pontos: `ReelsService` registra pasta, caminhos e filtragem; o IPC registra a lista recebida; `ReelsProtocol` registra resolução, Range e status; o renderer registra `loadstart`, metadados, sucesso, reprodução e o `MediaError` completo. Mensagens do renderer com prefixo `[Reels/]` são encaminhadas ao terminal do processo principal.
+
+## Arquivos da distração
+
+Criados: `instagram.html`, `desktop/windows/instagram-window.ts`, `desktop/services/reels-service.ts`, `desktop/services/media-range.ts`, `preload/instagram-preload.ts`, `src/instagram/*`, `public/instagram/home.jpeg`, `assets/reels/README.md` e testes/smoke correspondentes.
+
+Modificados: janela/processo principal, registro de IPC, contratos/eventos compartilhados, preload principal, entrada React/Vite, estilos, README e documentação.
 
 ## Fluxo da câmera
 

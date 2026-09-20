@@ -2,7 +2,7 @@
   "name": "baistudy",
   "version": "0.1.0",
   "private": true,
-  "description": "BaiStudy — protótipo desktop das etapas 2 e 3 (câmera e sinais de atenção)",
+  "description": "BaiStudy — câmera, sinais de atenção e distração local de Instagram/Reels",
   "main": "dist-electron/desktop/main.js",
   "scripts": {
     "assets:prepare": "node scripts/prepare-mediapipe-assets.mjs",
