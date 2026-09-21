@@ -30,7 +30,7 @@ npm run typecheck
 npm run build
 ```
 
-São 24 testes que cobrem regras acadêmicas, bônus de demonstração, a grade obrigatória protegida, persistência, validação IPC, calibração, permanência temporal, reações de atenção, comportamento ocioso e posição automática do Freddy.
+São 32 testes que cobrem regras acadêmicas, bônus de demonstração, a grade obrigatória protegida, persistência, validação IPC, calibração, permanência temporal, reações de atenção, comportamento ocioso e posição automática do Freddy.
 
 ## Roteiro integrado de apresentação
 

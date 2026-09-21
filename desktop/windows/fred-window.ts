@@ -6,6 +6,7 @@ import { loadRenderer } from './load-renderer';
 export async function createFredWindow(
   nativeWayland: boolean,
   onCreated?: (window: BrowserWindow) => void,
+  showInitially = true,
 ): Promise<BrowserWindow> {
   const initial = chooseFredPosition(screen.getPrimaryDisplay().workArea, 'discreet');
   const window = new BrowserWindow({
@@ -43,6 +44,6 @@ export async function createFredWindow(
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event) => event.preventDefault());
   await loadRenderer(window, 'fred.html');
-  window.showInactive();
+  if (showInitially) window.showInactive();
   return window;
 }

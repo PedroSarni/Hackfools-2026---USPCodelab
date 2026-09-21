@@ -34,7 +34,7 @@ export class FredRuntime {
       source: 'idle',
       activity: 'normal',
       intent: 'discreet',
-      voiceEnabled: true,
+      voiceEnabled: settings.getFredPreferences().voiceEnabled,
       voiceStatus: 'idle',
       graphics: nativeWayland ? 'Wayland' : process.platform === 'linux' ? 'X11 / XWayland' : 'Nativo',
       overlaySupported: !nativeWayland,
@@ -43,27 +43,55 @@ export class FredRuntime {
     this.behavior = new FredBehaviorController((reaction, intent) => this.applyReaction(reaction, intent));
   }
 
-  async start(_onCreated: (window: BrowserWindow) => void): Promise<void> {
+  async start(onCreated: (window: BrowserWindow) => void): Promise<BrowserWindow> {
     this.state.visible = false;
-    await this.settings.updateFredPreferences({ voiceEnabled: true });
+    this.window = await createFredWindow(this.nativeWayland, onCreated, false);
+    this.position = new FredPositionController(
+      this.screen,
+      this.window,
+      () => this.getRelatedWindows()
+        .filter((window): window is BrowserWindow => Boolean(
+          window && !window.isDestroyed() && window.isVisible() && !window.isMinimized(),
+        ))
+        .map((window) => window.getBounds()),
+      !this.nativeWayland,
+      (status) => { this.state.positionStatus = status; this.broadcast(); },
+    );
     this.speech = new SpeechService(
-      (audio) => { if (this.state.voiceEnabled && this.state.visible) this.getRelatedWindows()[0]?.webContents.send(IPC.fred.audio, audio); },
+      (audio) => { if (this.state.voiceEnabled && this.state.visible) this.window?.webContents.send(IPC.fred.audio, audio); },
       (status) => { this.state.voiceStatus = status; this.broadcast(); },
     );
     this.idle = new FredIdleController(
-      () => this.state.visible && this.state.voiceStatus === 'idle',
+      () => this.state.visible && ['idle', 'observing'].includes(this.state.mood) &&
+        ['idle', 'manual'].includes(this.state.source) && this.state.voiceStatus === 'idle',
       (scrolling) => { this.state.activity = scrolling ? 'scrolling' : 'normal'; this.broadcast(); },
       () => this.behavior.caughtScrolling(),
     );
+    this.window.on('close', (event) => {
+      if (this.quitting) return;
+      event.preventDefault();
+      this.hide();
+    });
+    this.window.on('blur', () => this.ensurePresence());
+    this.window.on('always-on-top-changed', (_event, enabled) => { if (!enabled) this.ensurePresence(); });
+    this.screen.on('display-added', this.displayChanged);
+    this.screen.on('display-removed', this.displayChanged);
+    this.screen.on('display-metrics-changed', this.displayChanged);
+    this.position.request('discreet', true);
     this.broadcast();
+    return this.window;
   }
 
   getWindow(): BrowserWindow | null { return this.window; }
   getState(): FredState { return { ...this.state }; }
 
   show(): void {
+    if (!this.window || this.window.isDestroyed()) return;
     const wasVisible = this.state.visible;
     this.state.visible = true;
+    this.window.showInactive();
+    this.ensurePresence();
+    this.position?.request(this.state.intent, true);
     this.idle?.reset();
     this.broadcast();
     if (!wasVisible) this.speakCurrent();
@@ -99,7 +127,7 @@ export class FredRuntime {
   stopVoice(): void {
     this.speechId = 0;
     this.speech?.cancel();
-    this.getRelatedWindows()[0]?.webContents.send(IPC.fred.audio, { stop: true });
+    this.window?.webContents.send(IPC.fred.audio, { stop: true });
   }
 
   voicePlayback(id: number, status: 'playing' | 'ended' | 'error'): void {

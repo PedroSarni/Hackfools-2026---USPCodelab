@@ -4,7 +4,7 @@ Integração de `feat/interface-fred-integration` (eca86ed) e `Instagram` (fd17c
 
 ## Executar no Windows
 
-Instale Node.js 22 ou superior. Extraia o ZIP, abra o terminal nesta pasta e execute:
+Instale Node.js 22.12+ ou 24 LTS. Evite o Node 25, que não é aceito pelo Vitest usado no projeto. Extraia o ZIP, abra o terminal nesta pasta e execute:
 
 ```
 npm ci

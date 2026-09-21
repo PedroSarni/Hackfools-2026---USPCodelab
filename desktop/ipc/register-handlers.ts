@@ -77,7 +77,9 @@ export function registerHandlers(dependencies: HandlerDependencies): () => void 
     assertTrustedSender(event, dependencies.trustedWebContentsIds);
     const main = dependencies.getMainWindow();
     if (main?.isMinimized()) main.restore();
-    main?.show(); main?.focus();
+    main?.show();
+    main?.focus();
+    main?.webContents.send('desktop:navigate', 'skins');
   });
   ipcMain.handle(IPC.fred.simulate, (event, value: unknown) => {
     assertTrustedSender(event, dependencies.trustedWebContentsIds);

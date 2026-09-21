@@ -24,6 +24,11 @@ const nativeWayland = process.platform === 'linux' &&
   (app.commandLine.getSwitchValue('ozone-platform') === 'wayland' ||
     (!app.commandLine.hasSwitch('ozone-platform') && process.env.XDG_SESSION_TYPE === 'wayland'));
 
+// Alguns drivers Linux perdem o contexto gráfico ao transformar frames de
+// vídeo em texturas. A câmera continua usando WebGL, mas MP4/WebM são
+// decodificados por software para manter Reels e animações estáveis.
+if (process.platform === 'linux') app.commandLine.appendSwitch('disable-accelerated-video-decode');
+
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'app',

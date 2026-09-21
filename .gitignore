@@ -4,6 +4,4 @@ dist-renderer/
 coverage/
 *.log
 .DS_Store
-
-
-node_modules
+public/study/.study-reward.mp4.*

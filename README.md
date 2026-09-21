@@ -169,14 +169,14 @@ O projeto foi construído principalmente com:
 
 Antes de começar, tenha instalado:
 
-* **Node.js 22+**
+* **Node.js 22.12+ ou 24 LTS** (evite o Node 25, incompatível com o Vitest usado pelo projeto)
 * **npm**
 * webcam acessível pelo sistema
 
 Clone o repositório:
 
 ```bash
-git clone https://github.com/PedroSarni/Hackfools-2026---USPCodelab.git
+git clone https://github.com/Bagiel1/Hackfools-2026---USPCodelab.git
 cd Hackfools-2026---USPCodelab
 ```
 
