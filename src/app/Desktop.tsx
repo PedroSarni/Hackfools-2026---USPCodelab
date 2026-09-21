@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { App } from './App';
-import { Fred } from '../fred/Fred';
 import { InstagramView } from '../instagram/InstagramView';
 import '../styles/instagram.css';
 import '../styles/desktop.css';
@@ -71,7 +70,6 @@ export function Desktop(): React.JSX.Element {
       {scene === 3 && <div className="os-download"><span className="os-success">✓</span><h1>Download concluído</h1><p>FreddyBuddy foi baixado com sucesso!</p><small>Feche o Chrome para começar.</small></div>}
     </div></section>}
     {running && <div className="os-runner"><video src="./fred/freddy_correndo.webm" autoPlay loop muted playsInline/></div>}
-    {started && <Fred/>}
     <footer className="os-taskbar"><button aria-label="Mostrar área de trabalho" onClick={() => setActive('desktop')}>⊞</button><button aria-label="Abrir Foco Total" onClick={() => open('foco')}><img src="./desktop/foco-total.png"/></button><button aria-label="Abrir Instagram" onClick={() => open('instagram')}><img src="./desktop/instagram.png"/></button>{started && <><button aria-label="Abrir skins" onClick={() => setActive('skins')}>🦴</button><button aria-label="Restaurar câmera" onClick={() => void window.baiStudyMain?.openCamera()}>📷</button></>}<div className="os-clock">{clock.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}<br/>{clock.toLocaleDateString('pt-BR')}</div></footer>
   </div>;
 }

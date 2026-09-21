@@ -105,7 +105,10 @@ export function Fred(): React.JSX.Element {
   if (!state.visible) return <></>;
   return <main className="desktop-freddy">
     <div className="desktop-freddy-speech" role="status"><b>FreddyBuddy</b><p>{state.message}</p></div>
-    <button className="desktop-freddy-character" aria-label="Abrir skins do FreddyBuddy" onClick={() => window.dispatchEvent(new Event('freddy:shop'))}>
+    <button className="desktop-freddy-character" aria-label="Abrir skins do FreddyBuddy" onClick={() => {
+      void window.baiStudyFred?.openMain();
+      window.dispatchEvent(new Event('freddy:shop'));
+    }}>
       {skinVideo ? <video key={skinVideo} src={`./fred/${skinVideo}.webm`} autoPlay loop muted playsInline /> : <img src={automaticAsset} alt="FreddyBuddy" draggable={false} />}
     </button>
   </main>;
