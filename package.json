@@ -11,6 +11,7 @@
     "postinstall": "npm run electron:install && npm run assets:prepare",
     "build:electron": "tsc -p tsconfig.electron.json",
     "build:renderer": "vite build",
+    "build:web": "npm run build:renderer && node scripts/copy-web-assets.mjs",
     "build": "npm run assets:prepare && npm run typecheck && npm run build:electron && npm run build:renderer",
     "start": "npm run build && node scripts/run-electron.mjs .",
     "start:demo": "npm run build && node scripts/run-electron.mjs . --no-sandbox --ozone-platform=x11 --ignore-gpu-blocklist",

@@ -2,6 +2,12 @@
 
 > **Transformando procrastinação em produtividade — do jeito mais caótico possível.**
 
+## 🌐 Teste agora
+
+### [▶ Abrir o Foco Total no navegador](https://pedrosarni.github.io/Hackfools-2026---USPCodelab/)
+
+Na demonstração web, abra o **Google Chrome** da área de trabalho simulada e siga o fluxo usando dados fictícios. O progresso fica salvo apenas no seu navegador. A versão Electron continua sendo a experiência completa para desktop.
+
 Projeto desenvolvido durante o **Hackfools 2026**, pelo **USP CodeLab**.
 
 O **Foco Total** é uma aplicação desktop experimental que mistura produtividade acadêmica, gamificação e humor para criar uma experiência propositalmente exagerada de combate à procrastinação.
