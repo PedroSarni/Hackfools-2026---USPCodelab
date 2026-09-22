@@ -1,36 +1,30 @@
-import type { BrowserWindow, Screen } from 'electron';
+import type { BrowserWindow } from 'electron';
 import type {
-  FredMood, FredPositionIntent, FredReaction, FredSimulation, FredState, FredVoiceStatus,
+  FredMood, FredPositionIntent, FredReaction, FredSimulation, FredState,
 } from '../../shared/contracts';
 import { IPC } from '../../shared/events';
 import { FredBehaviorController } from '../behavior/fred-behavior-controller';
 import { FredIdleController } from '../behavior/fred-idle-controller';
-import { FredPositionController } from '../behavior/fred-position-controller';
 import type { SettingsService } from '../services/settings-service';
 import { SpeechService } from '../speech/speech-service';
-import { createFredWindow } from '../windows/fred-window';
 
 export class FredRuntime {
-  private window: BrowserWindow | null = null;
   private behavior: FredBehaviorController;
   private idle?: FredIdleController;
-  private position?: FredPositionController;
   private speech?: SpeechService;
   private speechId = 0;
   private quitting = false;
   private state: FredState;
-  private readonly displayChanged = (): void => { this.position?.request(this.state.intent, true); };
 
   constructor(
     private readonly settings: SettingsService,
-    private readonly screen: Screen,
-    private readonly nativeWayland: boolean,
+    nativeWayland: boolean,
     private readonly getRelatedWindows: () => Array<BrowserWindow | null>,
   ) {
     this.state = {
       visible: true,
       mood: 'idle',
-      message: 'Freddy na área. Abre o PDF que eu fico de olho.',
+      message: 'Olá! Eu sou o Freddy, vou te ajudar a largar a procrastinação.',
       source: 'idle',
       activity: 'normal',
       intent: 'discreet',
@@ -43,7 +37,7 @@ export class FredRuntime {
     this.behavior = new FredBehaviorController((reaction, intent) => this.applyReaction(reaction, intent));
   }
 
-  async start(_onCreated: (window: BrowserWindow) => void): Promise<void> {
+  async start(): Promise<void> {
     this.state.visible = false;
     await this.settings.updateFredPreferences({ voiceEnabled: true });
     this.speech = new SpeechService(
@@ -58,10 +52,10 @@ export class FredRuntime {
     this.broadcast();
   }
 
-  getWindow(): BrowserWindow | null { return this.window; }
   getState(): FredState { return { ...this.state }; }
 
   show(): void {
+    if (this.quitting) return;
     const wasVisible = this.state.visible;
     this.state.visible = true;
     this.idle?.reset();
@@ -71,7 +65,6 @@ export class FredRuntime {
 
   hide(): void {
     this.state.visible = false;
-    this.window?.hide();
     this.stopVoice();
     this.idle?.reset();
     this.broadcast();
@@ -81,6 +74,7 @@ export class FredRuntime {
   preview(mood: FredMood): void { this.behavior.preview(mood); }
   reactToCamera(reaction: FredReaction): void { this.behavior.camera(reaction); }
   hover(inside: boolean): void { this.idle?.hover(inside); }
+  say(message: string, complete = false): void { this.behavior.say(message, complete); }
 
   async setVoiceEnabled(enabled: boolean): Promise<void> {
     this.state.voiceEnabled = enabled;
@@ -108,21 +102,21 @@ export class FredRuntime {
     this.broadcast();
   }
 
-  refreshPosition(): void { this.position?.request(this.state.intent); }
+
+  retire(): void {
+    this.hide();
+    this.dispose();
+  }
 
   dispose(): void {
     this.quitting = true;
     this.idle?.dispose();
-    this.position?.dispose();
     this.behavior.dispose();
     this.speech?.dispose();
-    this.screen.removeListener('display-added', this.displayChanged);
-    this.screen.removeListener('display-removed', this.displayChanged);
-    this.screen.removeListener('display-metrics-changed', this.displayChanged);
-    this.window?.destroy();
   }
 
   private applyReaction(reaction: FredReaction, intent: FredPositionIntent): void {
+    if (this.quitting) return;
     this.idle?.reset();
     Object.assign(this.state, {
       mood: reaction.mood,
@@ -132,7 +126,6 @@ export class FredRuntime {
       activity: 'normal',
     });
     this.show();
-    this.position?.request(intent);
     this.broadcast();
     if (reaction.source !== 'idle') this.speakCurrent();
   }
@@ -142,14 +135,8 @@ export class FredRuntime {
     if (this.state.voiceEnabled && this.state.visible) this.speechId = this.speech?.speak(this.state.message) ?? 0;
   }
 
-  private ensurePresence(): void {
-    if (this.quitting || !this.state.visible || !this.window || this.window.isDestroyed() || this.nativeWayland) return;
-    this.window.setAlwaysOnTop(true, 'floating');
-    if (this.window.isVisible()) this.window.moveTop();
-  }
-
   private broadcast(): void {
-    for (const window of [this.window, ...this.getRelatedWindows()]) {
+    for (const window of this.getRelatedWindows()) {
       if (window && !window.isDestroyed()) window.webContents.send(IPC.fred.state, this.getState());
     }
   }

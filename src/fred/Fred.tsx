@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FredAudio, FredState } from '../../shared/contracts';
+import { MatteVideo } from './MatteVideo';
 
 const ASSETS = {
   idle: './fred/realistic_skeleton_transparent_base.png',
@@ -11,16 +12,10 @@ const ASSETS = {
   scrolling: './fred/01_realistic_scrolling_short_videos.gif',
   talking: './fred/04_realistic_talking.gif',
 } as const;
-const SKIN_ASSETS = {
-  classic: ASSETS.idle,
-  sunglasses: ASSETS.happy,
-  scrolling: ASSETS.scrolling,
-  talking: ASSETS.talking,
-} as const;
 
 function loadSavedVideoSkin(): string {
   const saved = localStorage.getItem('freddyVideoSkin') || '';
-  if (saved === 'freddy_puxando') {
+  if (!['asa', 'descolado', 'fogo', 'rock', 'bike'].some(id => saved === `freddy_${id}`)) {
     localStorage.removeItem('freddyVideoSkin');
     return '';
   }
@@ -35,10 +30,6 @@ export function Fred(): React.JSX.Element {
     window.addEventListener('freddy:skin', onSkin);
     return () => window.removeEventListener('freddy:skin', onSkin);
   }, []);
-  const [skin, setSkin] = useState<'auto' | 'classic' | 'sunglasses' | 'scrolling' | 'talking'>(() => {
-    const saved = localStorage.getItem('freddySkin');
-    return ['classic', 'sunglasses', 'scrolling', 'talking'].includes(saved ?? '') ? saved as 'classic' | 'sunglasses' | 'scrolling' | 'talking' : 'auto';
-  });
   const audioContext = useRef<AudioContext | undefined>(undefined);
   const source = useRef<AudioBufferSourceNode | undefined>(undefined);
   const generation = useRef(0);
@@ -94,19 +85,12 @@ export function Fred(): React.JSX.Element {
 
   if (!state) return <div className="fred-loading">Reunindo os ossos…</div>;
   const automaticAsset = state.voiceStatus === 'playing' ? ASSETS.talking : state.activity === 'scrolling' ? ASSETS.scrolling : ASSETS[state.mood];
-  const asset = skin === 'auto' ? automaticAsset : SKIN_ASSETS[skin];
-  const sourceLabel = state.source === 'camera' ? 'CÂMERA' : state.source === 'simulation' ? 'SIMULAÇÃO' : state.activity === 'scrolling' ? 'FLAGRADO ONLINE' : 'AO VIVO';
-  const chooseSkin = (next: typeof skin): void => {
-    setSkin(next);
-    if (next === 'auto') localStorage.removeItem('freddySkin');
-    else localStorage.setItem('freddySkin', next);
-  };
 
   if (!state.visible) return <></>;
   return <main className="desktop-freddy">
-    <div className="desktop-freddy-speech" role="status"><b>FreddyBuddy</b><p>{state.message}</p></div>
-    <button className="desktop-freddy-character" aria-label="Abrir skins do FreddyBuddy" onClick={() => window.dispatchEvent(new Event('freddy:shop'))}>
-      {skinVideo ? <video key={skinVideo} src={`./fred/${skinVideo}.webm`} autoPlay loop muted playsInline /> : <img src={automaticAsset} alt="FreddyBuddy" draggable={false} />}
+    <div className="desktop-freddy-speech" role="status"><b>Freddy</b><p>{state.message}</p></div>
+    <button className="desktop-freddy-character" aria-label="Abrir skins do Freddy" onMouseEnter={() => window.baiStudyFred?.hover(true)} onMouseLeave={() => window.baiStudyFred?.hover(false)} onFocus={() => window.baiStudyFred?.hover(true)} onBlur={() => window.baiStudyFred?.hover(false)} onClick={() => window.dispatchEvent(new Event('freddy:shop'))}>
+      {state.activity === 'scrolling' ? <img src={ASSETS.scrolling} alt="Freddy scrollando"/> : skinVideo === 'freddy_bike' ? <MatteVideo src="./fred/freddy_bike.webm" sideInset={0.14} loop label="Freddy ciclista" /> : skinVideo ? <video key={skinVideo} src={`./fred/${skinVideo}.webm`} autoPlay loop muted playsInline /> : <img src={automaticAsset} alt="Freddy" draggable={false} />}
     </button>
   </main>;
 }

@@ -5,7 +5,7 @@ const { ELECTRON_RUN_AS_NODE: _ignored, ...cleanEnvironment } = process.env;
 const child = spawn(electron, process.argv.slice(2), {
   stdio: 'inherit',
   env: cleanEnvironment,
-  windowsHide: false,
+  windowsHide: true,
 });
 
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGUSR2']) {

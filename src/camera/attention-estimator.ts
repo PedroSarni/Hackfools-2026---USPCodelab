@@ -17,6 +17,7 @@ export class AttentionEstimator {
   private statusSince = 0;
   private candidate: AttentionStatus = 'uncertain';
   private candidateSince = 0;
+  private frontSamples: PoseMetrics[] = [];
 
   setCalibration(profile: CalibrationProfile): void {
     this.profile = profile;
@@ -30,10 +31,30 @@ export class AttentionEstimator {
   clearCalibration(): void {
     this.profile = null;
     this.smoothed = null;
+    this.frontSamples = [];
+    this.status = 'uncertain';
+    this.candidate = 'uncertain';
+    this.statusSince = 0;
+    this.candidateSince = 0;
   }
 
   update(observation: VisionObservation): AttentionEstimate {
     const now = observation.capturedAt;
+    if (!this.profile && observation.detected && observation.metrics && observation.quality >= MIN_QUALITY) {
+      const metrics = observation.metrics;
+      const first = this.frontSamples[0];
+      if (first && (Math.abs(first.pitch - metrics.pitch) > 0.025 || Math.abs(first.yaw - metrics.yaw) > 0.035)) this.frontSamples = [];
+      this.frontSamples.push(metrics);
+      if (this.frontSamples.length >= 18) {
+        const front = this.frontSamples.reduce((mean, sample) => ({
+          pitch: mean.pitch + sample.pitch / 18, yaw: mean.yaw + sample.yaw / 18,
+          roll: mean.roll + sample.roll / 18, faceWidth: mean.faceWidth + sample.faceWidth / 18,
+        }), { pitch: 0, yaw: 0, roll: 0, faceWidth: 0 });
+        this.setCalibration({ front, downPitchDelta: 0.12, sideYawThreshold: 0.065, createdAt: now });
+        this.frontSamples = [];
+      }
+    }
+    if (!observation.detected || observation.quality < MIN_QUALITY) this.frontSamples = [];
     if (observation.metrics) this.smoothed = smooth(this.smoothed, observation.metrics, 0.28);
     const raw = this.classify(observation);
 
@@ -63,6 +84,7 @@ export class AttentionEstimator {
   }
 
   unavailable(now = Date.now()): AttentionEstimate {
+    this.frontSamples = [];
     this.smoothed = null;
     this.status = 'uncertain';
     this.candidate = 'uncertain';

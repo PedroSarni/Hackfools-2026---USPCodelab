@@ -40,6 +40,7 @@ export function buildReelFeed(
   normalReels: readonly ReelAsset[],
   studyReels: readonly StudyReelContent[] = STUDY_REELS,
 ): ReelFeedItem[] {
+  if (studyReels.length === 0) return normalReels.map(toNormalItem);
   const feed: ReelFeedItem[] = normalReels.slice(0, 3).map(toNormalItem);
   if (normalReels.length <= 3 || studyReels.length === 0) return feed;
 

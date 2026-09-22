@@ -28,7 +28,7 @@ describe('ReelsService', () => {
 
     const reels = await new ReelsService(directory).list();
     expect(reels.map((reel) => reel.fileName)).toEqual(['reel2.webm', 'reel10.mp4']);
-    expect(reels[0].url).toBe('app://bundle/__reels__/reel2.webm');
+    expect(reels[0].url).toBe('foco://bundle/__reels__/reel2.webm');
   });
 
   it('retorna estado vazio sem falhar quando a pasta não existe', async () => {

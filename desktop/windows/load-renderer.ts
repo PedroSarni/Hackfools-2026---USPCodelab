@@ -1,10 +1,10 @@
 import type { BrowserWindow } from 'electron';
 
-export async function loadRenderer(window: BrowserWindow, page: 'index.html' | 'instagram.html' | 'camera.html' | 'fred.html'): Promise<void> {
+export async function loadRenderer(window: BrowserWindow, page: 'index.html' | 'camera.html'): Promise<void> {
   const developmentServer = process.env.VITE_DEV_SERVER_URL;
   if (developmentServer) {
     await window.loadURL(`${developmentServer}/${page}`);
     return;
   }
-  await window.loadURL(`app://bundle/${page}`);
+  await window.loadURL(`foco://bundle/${page}`);
 }

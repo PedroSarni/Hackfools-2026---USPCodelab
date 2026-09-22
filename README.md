@@ -1,10 +1,10 @@
-# 🎓 FreddyBuddy
+# 🎓 Foco Total
 
 > **Transformando procrastinação em produtividade — do jeito mais caótico possível.**
 
 Projeto desenvolvido durante o **Hackfools 2026**, pelo **USP CodeLab**.
 
-O **FreddyBuddy** é uma aplicação desktop experimental que mistura produtividade acadêmica, gamificação e humor para criar uma experiência propositalmente exagerada de combate à procrastinação.
+O **Foco Total** é uma aplicação desktop experimental que mistura produtividade acadêmica, gamificação e humor para criar uma experiência propositalmente exagerada de combate à procrastinação.
 
 A ideia é simples: se estudar normalmente não está funcionando, talvez um Freddy flutuando pela sua tela, monitorando sua atenção, distribuindo moedas virtuais e transformando uma aula em um feed de Reels resolva.
 
@@ -16,12 +16,12 @@ Esse é meio que o ponto.
 
 ## 💡 A ideia
 
-O FreddyBuddy simula uma plataforma acadêmica gamificada na qual o estudante possui:
+O Foco Total simula uma plataforma acadêmica gamificada na qual o estudante possui:
 
 * 📚 disciplinas e tarefas acadêmicas;
 * 🎯 missões obrigatórias;
 * 🪙 **Study Coins** como sistema de recompensa;
-* 🐻 Freddy, um mascote que acompanha o usuário pela área de trabalho;
+* 💀 Freddy, um buddy que acompanha o usuário pela área de trabalho;
 * 📷 detecção local de sinais de atenção pela webcam;
 * 📱 conteúdos acadêmicos apresentados em formatos inspirados em redes sociais;
 * 🎰 recompensas e mecânicas propositalmente absurdas.
@@ -54,15 +54,15 @@ Algumas obrigações acadêmicas são protegidas pela própria lógica da aplica
 
 Porque aparentemente conhecimento não era recompensa suficiente.
 
-O FreddyBuddy possui uma economia própria baseada em **Study Coins**.
+O Foco Total possui uma economia própria baseada em **Study Coins**.
 
-As moedas podem ser obtidas ao concluir atividades e utilizadas para desbloquear recompensas dentro da aplicação, incluindo customizações do Freddy.
+As moedas podem ser obtidas ao concluir atividades e utilizadas para desbloquear recompensas dentro da aplicação.
 
 ---
 
-## 🐻 Freddy
+## 💀 Freddy
 
-Freddy é o companheiro — ou fiscal — acadêmico do usuário.
+Freddy é o companheiro (ou fiascal) acadêmico do usuário. Inspirado do esqueleto Freddy, mascote da biblioteca do ICMC.
 
 Ele permanece como uma janela flutuante sobre os outros aplicativos e reage a diferentes eventos da aplicação.
 
@@ -121,7 +121,7 @@ Vitórias e derrotas fazem parte da demonstração.
 
 Study Coins podem ser utilizadas na loja para adquirir customizações.
 
-Skins compradas podem ser aplicadas imediatamente ao Freddy e permanecem disponíveis dentro da aplicação.
+Skins compradas podem ser aplicadas imediatamente ao Freddy e permanecem disponíveis dentro da aplicação. Os preços são progressivos: 50, 100, 150, 200 e 250 Study Coins.
 
 ---
 
@@ -154,9 +154,7 @@ O projeto foi construído principalmente com:
 ├── src/                # aplicação React / renderer
 │
 ├── index.html
-├── instagram.html
 ├── camera.html
-├── fred.html
 ├── package.json
 └── README.md
 ```
@@ -297,6 +295,6 @@ Informações adicionais sobre execução, testes e progresso do projeto estão 
 ---
 
 <p align="center">
-  <strong>FreddyBuddy</strong><br>
+  <strong>Foco Total</strong><br>
   Talvez estudar não precise ser saudável.
 </p>

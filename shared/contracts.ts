@@ -94,6 +94,12 @@ export interface InstagramBridge {
 
 
 export interface MainBridge {
+  materialOpened(id: string): Promise<void>;
+  skinSelected(id: string): Promise<void>;
+  getSession(): Promise<import('./freddy-session').FreddySessionState>;
+  startBuddy(): Promise<import('./freddy-session').FreddySessionState>;
+  dismissBuddy(): Promise<import('./freddy-session').FreddySessionState>;
+  finishBuddy(): Promise<import('./freddy-session').FreddySessionState>;
   openInstagram(): Promise<void>;
   onNavigate(callback: (target: string) => void): () => void;
   getAcademy(): Promise<import('./academy').AcademyState>;
@@ -128,7 +134,6 @@ export interface CameraBridge {
   getPreferences(): Promise<CameraPreferences>;
   updatePreferences(patch: Partial<CameraPreferences>): Promise<CameraPreferences>;
   publishAttention(signal: AttentionSignal): void;
-  onFredReaction(callback: (reaction: FredReaction) => void): () => void;
 }
 
 declare global {

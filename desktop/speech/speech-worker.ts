@@ -6,7 +6,7 @@ if (!parentPort) throw new Error('Worker de voz iniciado fora de uma worker thre
 const enginePromise = initialize().then((module) => {
   const engine = new module.eSpeakNGWorker();
   engine.set_voice('pt-br');
-  engine.set_rate(1.4);
+  engine.set_rate(1.75 * 1.3);
   engine.set_pitch(1.0);
   engine.set_range(0.65);
   return engine;

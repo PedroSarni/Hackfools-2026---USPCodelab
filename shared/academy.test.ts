@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { balanceOf, initialAcademy, reduceAcademy, type Mission } from './academy';
+import { balanceOf, FREDDY_SKINS, initialAcademy, reduceAcademy, type Mission } from './academy';
 const mission = (id: string, criterion: Mission['criterion'] = 'manual'): Mission => ({ id, title: 'Revisão', subjectId: '', due: '2026-09-20T18:00', criterion, target: 20, material: '', pages: '', completedAt: null });
 describe('Missões e carteira', () => {
  it('recompensa somente uma vez, inclusive após exclusão e recriação do mesmo id', () => {
@@ -31,7 +31,24 @@ describe('Missões e carteira', () => {
   let state = reduceAcademy(initialAcademy(), { type: 'wallet.bonus' }, '2026-09-20T12:00:00.000Z');
   state = reduceAcademy(state, { type: 'wallet.bonus' }, '2026-09-20T12:00:00.000Z');
   expect(balanceOf(state)).toBe(200);
-  expect(state.transactions.at(-1)?.reason).toContain('FreddyBuddy');
+  expect(state.transactions.at(-1)?.reason).toContain('versão de desenvolvedor');
+ });
+ it('vende as skins do Freddy com aumento de 50 moedas entre elas', () => {
+  expect(FREDDY_SKINS.map(item => item.price)).toEqual([50, 100, 150, 200, 250]);
+  let state = reduceAcademy(initialAcademy(), { type: 'wallet.bonus' });
+  state = reduceAcademy(state, { type: 'shop.buy', id: 'freddy_asa' });
+  expect(balanceOf(state)).toBe(50);
+  expect(state.owned).toContain('freddy_asa');
+  expect(state.equipped).toBe('freddy_asa');
+  expect(() => reduceAcademy(state, { type: 'shop.buy', id: 'freddy_descolado' })).toThrow('Saldo insuficiente');
+ });
+ it('permite pagar 1000 moedas para eliminar o Freddy', () => {
+  let state = initialAcademy();
+  expect(() => reduceAcademy(state, { type: 'freddy.dismiss.buy' })).toThrow('1000');
+  for (let index = 0; index < 10; index += 1) state = reduceAcademy(state, { type: 'wallet.bonus' }, `2026-09-20T12:00:${String(index).padStart(2, '0')}.000Z`);
+  state = reduceAcademy(state, { type: 'freddy.dismiss.buy' });
+  expect(balanceOf(state)).toBe(0);
+  expect(state.transactions.at(-1)).toMatchObject({ amount: -1000, reason: 'Liberdade do Freddy' });
  });
  it('excluir matéria preserva missão e prazo sem vínculo órfão', () => {
   let s = reduceAcademy(initialAcademy(), { type: 'subject.save', value: { id: 'math', name: 'Cálculo', color: '#aabbcc' } });

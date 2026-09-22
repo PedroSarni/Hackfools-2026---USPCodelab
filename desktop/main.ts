@@ -1,12 +1,11 @@
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { ReelsService } from './services/reels-service';
 import { parseByteRange } from './services/media-range';
 import { existsSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { app, BrowserWindow, Menu, net, protocol, screen, session, Tray } from 'electron';
+import { extname, join, relative, resolve } from 'node:path';
+import { app, BrowserWindow, Menu, protocol, session, Tray } from 'electron';
 import { FredRuntime } from './fred/fred-runtime';
 import { registerHandlers } from './ipc/register-handlers';
 import { AcademyService } from './services/academy-service';
@@ -26,14 +25,14 @@ const nativeWayland = process.platform === 'linux' &&
 
 protocol.registerSchemesAsPrivileged([
   {
-    scheme: 'app',
+    scheme: 'foco',
     privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true },
   },
 ]);
 
 function configureAppProtocol(reels: ReelsService): void {
   const rendererRoot = resolve(__dirname, '../../dist-renderer');
-  protocol.handle('app', async (request) => {
+  protocol.handle('foco', async (request) => {
     const requestUrl = new URL(request.url);
     if (requestUrl.pathname.startsWith('/__reels__/')) {
       let fileName: string;
@@ -63,8 +62,61 @@ function configureAppProtocol(reels: ReelsService): void {
     if (relativePath.startsWith('..') || relativePath.includes('..')) {
       return new Response('Caminho inválido.', { status: 400 });
     }
-    return net.fetch(pathToFileURL(target).toString());
+    return serveRendererAsset(target);
   });
+}
+
+async function serveRendererAsset(filePath: string): Promise<Response> {
+  try {
+    const file = await stat(filePath);
+    if (!file.isFile()) return new Response('Arquivo nao encontrado.', { status: 404 });
+
+    const body = new Uint8Array(await readFile(filePath));
+    return new Response(body, {
+      headers: {
+        'Content-Length': String(file.size),
+        'Content-Type': getContentType(filePath),
+      },
+    });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return new Response('Arquivo nao encontrado.', { status: 404 });
+    }
+    console.error('[AppProtocol] falha ao servir arquivo local', {
+      filePath,
+      error: describeError(error),
+    });
+    return new Response('Falha ao ler arquivo.', { status: 500 });
+  }
+}
+
+function getContentType(filePath: string): string {
+  switch (extname(filePath).toLowerCase()) {
+    case '.html':
+      return 'text/html; charset=utf-8';
+    case '.js':
+    case '.mjs':
+      return 'text/javascript; charset=utf-8';
+    case '.css':
+      return 'text/css; charset=utf-8';
+    case '.json':
+      return 'application/json; charset=utf-8';
+    case '.png':
+      return 'image/png';
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.svg':
+      return 'image/svg+xml';
+    case '.webm':
+      return 'video/webm';
+    case '.mp4':
+      return 'video/mp4';
+    case '.wasm':
+      return 'application/wasm';
+    default:
+      return 'application/octet-stream';
+  }
 }
 
 async function serveReel(request: Request, mediaPath: string, reelsDirectory: string): Promise<Response> {
@@ -197,17 +249,15 @@ async function openMainWindow(): Promise<void> {
 }
 
 function createTray(): void {
-  const developmentIcon = resolve(__dirname, '../../public/fred/tray.png');
-  const builtIcon = resolve(__dirname, '../../dist-renderer/fred/tray.png');
+  const developmentIcon = resolve(__dirname, '../../public/desktop/foco-total.png');
+  const builtIcon = resolve(__dirname, '../../dist-renderer/desktop/foco-total.png');
   const icon = existsSync(builtIcon) ? builtIcon : developmentIcon;
   if (!existsSync(icon)) return;
   tray = new Tray(icon);
   tray.setToolTip('Foco Total — fiscal de estudos');
   tray.on('click', () => void openMainWindow());
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Abrir Foco Total', click: () => void openMainWindow() },
-    { label: 'Mostrar Freddy', click: () => fred?.show() },
-    { label: 'Esconder Freddy', click: () => fred?.hide() },
+    { label: 'Abrir área de trabalho', click: () => void openMainWindow() },
     { type: 'separator' },
     { label: 'Sair do Foco Total', click: () => app.quit() },
   ]));
@@ -224,9 +274,9 @@ if (!hasSingleInstanceLock) {
 
     const settings = new SettingsService(join(app.getPath('userData'), 'settings.json'));
     const academy = new AcademyService(join(app.getPath('userData'), 'academy.json'));
-    await Promise.all([settings.load(), academy.load()]);
+    await Promise.all([settings.load(), academy.load(true)]);
 
-    fred = new FredRuntime(settings, screen, nativeWayland, () => [mainWindow, cameraWindow]);
+    fred = new FredRuntime(settings, nativeWayland, () => [mainWindow, cameraWindow]);
     disposeHandlers = registerHandlers({
       academy,
       settings,
@@ -237,7 +287,7 @@ if (!hasSingleInstanceLock) {
       fred,
     });
 
-    await fred.start(trust);
+    await fred.start();
     await openMainWindow();
 
     createTray();
@@ -250,7 +300,7 @@ if (!hasSingleInstanceLock) {
 }
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin' && (!fred?.getWindow() || fred.getWindow()?.isDestroyed())) app.quit();
+  if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('before-quit', () => {

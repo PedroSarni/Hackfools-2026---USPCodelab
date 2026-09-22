@@ -9,23 +9,29 @@ const LIMIT_POSITION = 9;
 type ProcrastinationModal = 'warning' | 'limit' | null;
 
 interface ReelsFeedProps {
+  supervised: boolean;
   reels: ReelAsset[];
   loading: boolean;
   error: string;
   initialSessionState: ProcrastinationSessionState;
 }
 
-export function ReelsFeed({ reels, loading, error, initialSessionState }: ReelsFeedProps): React.JSX.Element {
-  const feedItems = useMemo(() => buildReelFeed(reels), [reels]);
+export function ReelsFeed({ reels, loading, error, initialSessionState, supervised }: ReelsFeedProps): React.JSX.Element {
+  const feedItems = useMemo(() => buildReelFeed(reels, supervised ? undefined : []), [reels, supervised]);
+  const lastPosition = supervised ? LIMIT_POSITION : feedItems.length;
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef(new Map<string, HTMLVideoElement>());
   const [failed, setFailed] = useState<Map<string, string>>(() => new Map());
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
   const navigationTargetRef = useRef<number | null>(null);
+  const scrollAnimationRef = useRef<number | null>(null);
+  const wheelDeltaRef = useRef(0);
+  const wheelLockedRef = useRef(false);
+  const wheelReleaseRef = useRef<number | null>(null);
   const [muted, setMuted] = useState(true);
   const [modal, setModal] = useState<ProcrastinationModal>(() =>
-    initialSessionState.limitReached ? 'limit' : null,
+    supervised && initialSessionState.limitReached ? 'limit' : null,
   );
   const warningTriggeredRef = useRef(initialSessionState.warningShown);
   const limitTriggeredRef = useRef(initialSessionState.limitReached);
@@ -38,31 +44,91 @@ export function ReelsFeed({ reels, loading, error, initialSessionState }: ReelsF
   const activeId = activeItem?.id ?? null;
   const interactionBlocked = modal !== null;
 
-  const goToIndex = useCallback((requestedIndex: number, behavior: ScrollBehavior = 'smooth'): void => {
+  const cancelScrollAnimation = useCallback((): void => {
+    if (scrollAnimationRef.current !== null) window.clearTimeout(scrollAnimationRef.current);
+    scrollAnimationRef.current = null;
+    navigationTargetRef.current = null;
+    containerRef.current?.classList.remove('reels-feed--animating');
+  }, []);
+
+  const goToIndex = useCallback((requestedIndex: number): void => {
     const root = containerRef.current;
     if (!root || feedItems.length === 0 || interactionBlocked) return;
-    const lastAllowedIndex = Math.min(feedItems.length - 1, LIMIT_POSITION - 1);
+    const lastAllowedIndex = Math.min(feedItems.length - 1, lastPosition - 1);
     const nextIndex = Math.min(lastAllowedIndex, Math.max(0, requestedIndex));
     const target = root.querySelectorAll<HTMLElement>('[data-reel-id]')[nextIndex];
     if (!target) return;
 
+    cancelScrollAnimation();
+    const startTop = root.scrollTop;
+    const endTop = target.offsetTop;
+    const distance = endTop - startTop;
+    if (Math.abs(distance) < 1) {
+      root.scrollTop = endTop;
+      activeIndexRef.current = nextIndex;
+      setActiveIndex(nextIndex);
+      return;
+    }
+
     navigationTargetRef.current = nextIndex;
-    activeIndexRef.current = nextIndex;
-    setActiveIndex(nextIndex);
-    root.scrollTo({ top: target.offsetTop, behavior });
-  }, [feedItems.length, interactionBlocked]);
+    root.classList.add('reels-feed--animating');
+    void root.offsetHeight;
+    const startedAt = performance.now();
+    const duration = Math.min(620, Math.max(480, Math.abs(distance) * .8));
+    const animate = (): void => {
+      const now = performance.now();
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = progress < .5 ? 4 * progress ** 3 : 1 - ((-2 * progress + 2) ** 3) / 2;
+      root.scrollTop = startTop + distance * eased;
+      if (progress < 1) {
+        scrollAnimationRef.current = window.setTimeout(animate, 16);
+        return;
+      }
+      root.scrollTop = endTop;
+      scrollAnimationRef.current = null;
+      navigationTargetRef.current = null;
+      root.classList.remove('reels-feed--animating');
+      activeIndexRef.current = nextIndex;
+      setActiveIndex(nextIndex);
+    };
+    scrollAnimationRef.current = window.setTimeout(animate, 0);
+  }, [cancelScrollAnimation, feedItems.length, interactionBlocked, lastPosition]);
 
   const goToReel = useCallback((direction: -1 | 1): void => {
     goToIndex(activeIndexRef.current + direction);
   }, [goToIndex]);
 
+  useEffect(() => () => {
+    if (wheelReleaseRef.current !== null) window.clearTimeout(wheelReleaseRef.current);
+    cancelScrollAnimation();
+  }, [cancelScrollAnimation]);
+
   useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const handleWheel = (event: WheelEvent): void => {
+      event.preventDefault();
+      if (interactionBlocked || wheelLockedRef.current) return;
+      wheelDeltaRef.current += event.deltaY;
+      if (Math.abs(wheelDeltaRef.current) < 24) return;
+      const direction = wheelDeltaRef.current > 0 ? 1 : -1;
+      wheelDeltaRef.current = 0;
+      wheelLockedRef.current = true;
+      goToReel(direction);
+      wheelReleaseRef.current = window.setTimeout(() => { wheelLockedRef.current = false; }, 650);
+    };
+    root.addEventListener('wheel', handleWheel, { passive: false });
+    return () => root.removeEventListener('wheel', handleWheel);
+  }, [error, goToReel, interactionBlocked, loading, reels.length]);
+
+  useEffect(() => {
+    if (!supervised) return;
     if (initialSessionState.warningShown) warningTriggeredRef.current = true;
     if (initialSessionState.limitReached) {
       limitTriggeredRef.current = true;
       setModal('limit');
     }
-  }, [initialSessionState.limitReached, initialSessionState.warningShown]);
+  }, [initialSessionState.limitReached, initialSessionState.warningShown, supervised]);
 
   useEffect(() => {
     if (activeIndex < feedItems.length) return;
@@ -71,7 +137,7 @@ export function ReelsFeed({ reels, loading, error, initialSessionState }: ReelsF
   }, [activeIndex, feedItems.length]);
 
   useEffect(() => {
-    if (!activeItem) return;
+    if (!activeItem || !supervised) return;
     const position = activeIndex + 1;
     logReel('info', '[Reels/anti-procrastination] Reel atual', {
       position,
@@ -105,7 +171,7 @@ export function ReelsFeed({ reels, loading, error, initialSessionState }: ReelsF
       void recordMilestone('warning');
       setModal('warning');
     }
-  }, [activeIndex, activeItem]);
+  }, [activeIndex, activeItem, supervised]);
 
   useEffect(() => {
     const syncPlayback = (): void => {
@@ -187,15 +253,9 @@ export function ReelsFeed({ reels, loading, error, initialSessionState }: ReelsF
           const root = event.currentTarget;
           if (root.clientHeight === 0 || interactionBlocked) return;
           const navigationTarget = navigationTargetRef.current;
-          if (navigationTarget !== null) {
-            const target = root.querySelectorAll<HTMLElement>('[data-reel-id]')[navigationTarget];
-            if (target && Math.abs(root.scrollTop - target.offsetTop) <= 2) {
-              navigationTargetRef.current = null;
-            }
-            return;
-          }
+          if (navigationTarget !== null) return;
           const visibleIndex = Math.round(root.scrollTop / root.clientHeight);
-          const index = Math.min(feedItems.length - 1, LIMIT_POSITION - 1, Math.max(0, visibleIndex));
+          const index = Math.min(feedItems.length - 1, lastPosition - 1, Math.max(0, visibleIndex));
           if (index !== activeIndexRef.current) {
             activeIndexRef.current = index;
             setActiveIndex(index);
@@ -204,13 +264,12 @@ export function ReelsFeed({ reels, loading, error, initialSessionState }: ReelsF
         onPointerDown={(event) => {
           if (interactionBlocked) return;
           if (event.pointerType === 'mouse' && (event.target as HTMLElement).closest('button')) return;
-          navigationTargetRef.current = null;
+          cancelScrollAnimation();
           dragStartY.current = event.clientY;
           dragStartScrollTop.current = event.currentTarget.scrollTop;
           dragStartIndex.current = activeIndexRef.current;
           if (event.pointerType === 'mouse') event.currentTarget.setPointerCapture(event.pointerId);
         }}
-        onWheel={() => { navigationTargetRef.current = null; }}
         onPointerMove={(event) => {
           if (event.pointerType !== 'mouse' || dragStartY.current === null || interactionBlocked) return;
           event.preventDefault();
@@ -307,12 +366,12 @@ function renderNormalReel({
           if (element) videoRefs.current.set(item.id, element);
           else videoRefs.current.delete(item.id);
         }}
-        src={index === activeIndex && item.id === activeId ? reel.url : undefined}
+        src={Math.abs(index - activeIndex) <= 1 ? reel.url : undefined}
         loop
         muted
         playsInline
         draggable={false}
-        preload={index === activeIndex ? 'auto' : 'none'}
+        preload={Math.abs(index - activeIndex) <= 1 ? 'auto' : 'none'}
         onLoadStart={(event) => {
           setFailed((current) => withoutMapKey(current, item.id));
           logReel('info', '[Reels/video] carregamento iniciado', {

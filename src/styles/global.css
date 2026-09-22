@@ -96,13 +96,12 @@ button:disabled { cursor: not-allowed; opacity: 0.48; }
 .status-pill[data-status="absent"] span { background: #ff716c; }
 
 .diagnostic-panel { position: absolute; top: 68px; right: 18px; z-index: 3; width: min(310px, calc(100vw - 36px)); padding: 16px; border: 1px solid rgba(255,255,255,.13); border-radius: 10px; background: rgba(13,15,12,.74); backdrop-filter: blur(15px); }
-.diagnostic-panel > span, .reaction-toast span { display: block; margin-bottom: 10px; color: #c7ee72; font-size: 10px; font-weight: 850; letter-spacing: .12em; }
+.diagnostic-panel > span { display: block; margin-bottom: 10px; color: #c7ee72; font-size: 10px; font-weight: 850; letter-spacing: .12em; }
 .diagnostic-panel dl { display: grid; gap: 6px; margin: 0; }
 .diagnostic-panel dl div { display: flex; justify-content: space-between; gap: 16px; }
 .diagnostic-panel dt { color: #9ba193; font-size: 12px; }
 .diagnostic-panel dd { margin: 0; font-size: 12px; text-align: right; }
 .diagnostic-panel p { margin: 12px 0 0; color: #8d9288; font-size: 10px; line-height: 1.4; }
-.reaction-toast { position: absolute; z-index: 4; left: 50%; bottom: 22px; width: min(560px, calc(100% - 36px)); padding: 15px 18px; transform: translateX(-50%); border: 1px solid rgba(200,240,110,.35); border-radius: 8px; color: #f4f7e9; background: rgba(25,31,20,.9); box-shadow: 0 14px 40px rgba(0,0,0,.3); font-size: 14px; }
 
 .camera-controls { padding: 13px 16px 16px; border-top: 1px solid #30332c; background: #181a17; }
 .control-row { display: flex; align-items: end; gap: 12px; }
@@ -131,24 +130,6 @@ button:disabled { cursor: not-allowed; opacity: 0.48; }
   .console-section--split { grid-template-columns: 1fr; }
 }
 
-.fred-html, .fred-body, .fred-body #root { width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; background: transparent !important; }
-.fred-stage { position:relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 5px; user-select: none; }
-.fred-speech { position: relative; width: 218px; margin-bottom: 2px; padding: 9px 12px; border: 2px solid #24232b; border-radius: 14px; color: #25232a; background: #f5f0df; box-shadow: 0 3px 0 #24232b; transition:opacity .12s; }
-.fred-speech::after { content: ""; position: absolute; bottom: -7px; left: 106px; width: 11px; height: 11px; transform: rotate(45deg); border-right: 2px solid #24232b; border-bottom: 2px solid #24232b; background: #f5f0df; }
-.fred-speech span { color: #63604e; font-size: 7px; font-weight: 850; letter-spacing: 1.3px; }
-.fred-speech p { min-height: 30px; margin: 3px 0 0; font-size: 11px; font-weight: 700; line-height: 1.25; }
-.fred-character { position: relative; width: 178px; height: 218px; cursor: default; }
-.fred-character img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 2px rgba(0,0,0,.23)); }
-.fred-stage.shop-open .fred-speech { opacity:0; pointer-events:none; }
-.freddy-skin-shop { position:absolute; z-index:5; top:4px; left:4px; right:4px; padding:9px; border:2px solid #24232b; border-radius:13px; color:#29242f; background:#fff4d7; box-shadow:0 4px 0 #24232b; }
-.freddy-skin-shop > strong,.freddy-skin-shop > span { display:block; }
-.freddy-skin-shop > strong { color:#6b3db0; font-size:9px; letter-spacing:.12em; }
-.freddy-skin-shop > span { margin:2px 0 7px; color:#736b76; font-size:8px; }
-.freddy-skin-shop > div { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
-.freddy-skin-shop button { min-width:0; padding:3px 2px; border:1px solid #d5c8ac; border-radius:7px; color:#514957; background:#fff; font-size:7px; }
-.freddy-skin-shop button.active { border-color:#6b3db0; color:#fff; background:#6b3db0; }
-.freddy-skin-shop img { display:block; width:100%; height:34px; object-fit:contain; }
-.freddy-skin-shop b { display:block; overflow:hidden; text-overflow:ellipsis; }
 .fred-loading { display: grid; width: 100%; height: 100%; place-items: center; color: #f5f0df; font-size: 12px; }
 
 /* Câmera compacta e obrigatória: a prévia é o produto, controles ficam recolhidos. */
@@ -169,6 +150,4 @@ button:disabled { cursor: not-allowed; opacity: 0.48; }
 .camera-controls--floating .calibration-actions { flex-wrap: wrap; }
 .camera-controls--floating .calibration-card button { min-height: 30px; padding: 5px 8px; font-size: 10px; }
 .camera-view--compact .diagnostic-panel { top: 46px; right: 8px; width: calc(100% - 16px); max-height: 180px; overflow: auto; padding: 10px; }
-.camera-view--compact .reaction-toast { bottom: 9px; width: calc(100% - 18px); padding: 9px 11px; font-size: 10px; }
-.camera-view--compact .reaction-toast span { margin-bottom: 4px; font-size: 8px; }
 .camera-minimize{position:absolute;right:76px;top:10px;background:#111a;color:white;border:1px solid #ffffff44;border-radius:7px;width:30px;height:30px;-webkit-app-region:no-drag;z-index:20}

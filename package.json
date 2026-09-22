@@ -3,7 +3,7 @@
   "productName": "Foco Total",
   "version": "0.1.0",
   "private": true,
-  "description": "Foco Total — interface acadêmica, Freddy flutuante e câmera com sinais de atenção",
+  "description": "Foco Total — interface acadêmica, mascote flutuante e câmera com sinais de atenção",
   "main": "dist-electron/desktop/main.js",
   "scripts": {
     "assets:prepare": "node scripts/prepare-mediapipe-assets.mjs",
@@ -17,6 +17,7 @@
     "dev": "npm run assets:prepare && npm run build:electron && concurrently -k \"vite --host 127.0.0.1\" \"wait-on tcp:127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 node scripts/run-electron.mjs .\"",
     "typecheck": "tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "test": "vitest run",
+    "test:smoke": "npm run build && node scripts/run-electron.mjs scripts/smoke-session.cjs",
     "test:watch": "vitest"
   },
   "dependencies": {

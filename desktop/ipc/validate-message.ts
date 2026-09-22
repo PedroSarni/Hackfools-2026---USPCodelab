@@ -17,7 +17,7 @@ function isTrustedFrame(frame: WebFrameMain | null): boolean {
 
   try {
     const url = new URL(frame.url);
-    if (url.protocol === 'app:' && url.hostname === 'bundle') return true;
+    if (url.protocol === 'foco:' && url.hostname === 'bundle') return true;
     return url.protocol === 'http:' && url.hostname === '127.0.0.1' && url.port === '5173';
   } catch {
     return false;

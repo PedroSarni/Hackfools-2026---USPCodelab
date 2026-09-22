@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AttentionSignal, CameraPreferences, FredReaction } from '../../shared/contracts';
+import type { AttentionSignal, CameraPreferences } from '../../shared/contracts';
 import { AttentionEstimator } from './attention-estimator';
 import { CalibrationSession, type CalibrationProgress } from './calibration';
 import { CalibrationPanel } from './CalibrationPanel';
@@ -38,7 +38,6 @@ export function CameraView(): React.JSX.Element {
   const [observation, setObservation] = useState<VisionObservation | null>(null);
   const [estimate, setEstimate] = useState<AttentionEstimate>(() => estimatorRef.current.unavailable());
   const [calibration, setCalibration] = useState<CalibrationProgress>(INITIAL_PROGRESS);
-  const [reaction, setReaction] = useState<FredReaction | null>(null);
   const [showControls, setShowControls] = useState(false);
 
   const publishUnavailable = useCallback((): void => {
@@ -74,13 +73,7 @@ export function CameraView(): React.JSX.Element {
       setPreferences(clean);
       return window.baiStudyCamera?.updatePreferences({ diagnostics: false });
     }).catch(() => undefined);
-    const unsubscribe = window.baiStudyCamera?.onFredReaction((nextReaction) => {
-      setReaction(nextReaction);
-      window.setTimeout(() => setReaction((current) => current?.reactionId === nextReaction.reactionId ? null : current), 5_000);
-    });
-
     return () => {
-      unsubscribe?.();
       visionRef.current?.dispose();
       camera.stop();
     };
@@ -218,12 +211,6 @@ export function CameraView(): React.JSX.Element {
           </aside>
         )}
 
-        {reaction && (
-          <div className="reaction-toast">
-            <span>EVENTO ENVIADO AO FRED</span>
-            {reaction.message}
-          </div>
-        )}
       </div>
 
       {showControls && <section className="camera-controls camera-controls--floating" aria-label="Controles da câmera">
@@ -261,7 +248,10 @@ export function CameraView(): React.JSX.Element {
           </label>
         </div>
 
-        <p>Detecção automática de presença. Não é necessário calibrar.</p>
+        <p>Olhe de frente para a câmera por alguns segundos para iniciar o tracker. Se necessário, ajuste a referência abaixo.</p>
+        <CalibrationPanel progress={calibration} cameraActive={active && modelReady} onBegin={beginCalibration}
+          onCapture={() => { calibrationRef.current.startCapture(); setCalibration(calibrationRef.current.getProgress()); }}
+          onSkipSides={() => { const profile = calibrationRef.current.skipSides(); if (profile) estimatorRef.current.setCalibration(profile); setCalibration(calibrationRef.current.getProgress()); }} />
         {error && <p className="camera-error" role="alert">{error}</p>}
       </section>}
     </main>

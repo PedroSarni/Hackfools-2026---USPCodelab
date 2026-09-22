@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { FredMood, FredSimulation, FredState, MainBridge } from '../shared/contracts';
 
-// Preloads sandboxed não podem carregar módulos locais em runtime.
 const IPC = {
   openCamera: 'main:open-camera',
   getAppInfo: 'main:get-app-info',
@@ -11,6 +10,12 @@ const IPC = {
 } as const;
 
 const bridge: MainBridge = {
+  materialOpened: (id) => ipcRenderer.invoke('buddy:material-opened', id),
+  skinSelected: (id) => ipcRenderer.invoke('buddy:skin-selected', id),
+  getSession: () => ipcRenderer.invoke('buddy:get-session'),
+  startBuddy: () => ipcRenderer.invoke('buddy:start'),
+  dismissBuddy: () => ipcRenderer.invoke('buddy:dismiss'),
+  finishBuddy: () => ipcRenderer.invoke('buddy:finish'),
   openInstagram: () => ipcRenderer.invoke('main:open-instagram'),
   onNavigate: (callback) => { const listener = (_event: Electron.IpcRendererEvent, target: string): void => callback(target); ipcRenderer.on('desktop:navigate', listener); return () => ipcRenderer.removeListener('desktop:navigate', listener); },
   getAcademy: () => ipcRenderer.invoke('academy:get'),
@@ -67,7 +72,6 @@ contextBridge.exposeInMainWorld('baiStudyFred', bridge);
 import type { InstagramBridge, ProcrastinationMilestone } from '../shared/contracts';
 {
 
-// Preloads sandboxed não podem carregar módulos locais em runtime.
 const IPC = {
   close: 'instagram:close',
   getReels: 'instagram:get-reels',

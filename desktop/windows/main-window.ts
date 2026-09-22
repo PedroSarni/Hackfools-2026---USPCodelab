@@ -8,7 +8,8 @@ export async function createMainWindow(onCreated?: (window: BrowserWindow) => vo
     height: 900,
     minWidth: 720,
     minHeight: 520,
-    title: 'Foco Total',
+    title: 'FreddyBuddy',
+    icon: join(__dirname, '../../../public/fred/tray.png'),
     backgroundColor: '#f7f5ef',
     show: false,
     webPreferences: {

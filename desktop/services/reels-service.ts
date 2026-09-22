@@ -49,7 +49,7 @@ export class ReelsService {
         id: createHash('sha256').update(entry.name).digest('hex').slice(0, 16),
         fileName: entry.name,
         displayName: displayName(entry.name),
-        url: `app://bundle/__reels__/${encodeURIComponent(entry.name)}`,
+        url: `foco://bundle/__reels__/${encodeURIComponent(entry.name)}`,
       }));
 
     console.info('[ReelsService] lista de Reels construída', {

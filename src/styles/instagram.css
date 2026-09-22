@@ -42,8 +42,8 @@
   backdrop-filter: blur(8px);
 }
 .instagram-content { position: absolute; inset: 0 0 64px; overflow: hidden; background: #000; }
-.instagram-home { width: 100%; height: 100%; overflow: hidden; background: #090a0d; }
-.instagram-home img { display: block; width: 100%; height: auto; min-height: 100%; object-fit: cover; object-position: top center; pointer-events: none; }
+.instagram-home { width: 100%; height: 100%; overflow: auto; background: #090a0d; }
+.instagram-home img { display: block; width: 100%; height: auto; pointer-events: none; }
 .instagram-nav {
   position: absolute;
   z-index: 50;
@@ -70,15 +70,16 @@
 .instagram-nav__avatar svg { width: 26px; height: 26px; padding: 2px; border: 2px solid #efefef; border-radius: 50%; }
 
 .reels-stage { position: relative; width: 100%; height: 100%; }
-.reels-feed { width: 100%; height: 100%; overflow-x: hidden; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior-y: contain; scrollbar-width: none; background: #000; cursor: grab; user-select: none; }
+.reels-feed { width: 100%; height: 100%; overflow-x: hidden; overflow-y: auto; scroll-behavior: auto; scroll-snap-type: y mandatory; overscroll-behavior-y: contain; scrollbar-width: none; background: #000; cursor: grab; user-select: none; -webkit-overflow-scrolling: touch; }
 .reels-feed--paused { overflow-y: hidden; pointer-events: none; }
+.reels-feed--animating { scroll-snap-type: none; }
 .reels-feed:active { cursor: grabbing; }
 .reels-feed::-webkit-scrollbar { display: none; }
 .reels-header { position: absolute; z-index: 25; top: 0; left: 0; right: 0; display: flex; height: 64px; padding: 19px 50px 12px 18px; align-items: center; justify-content: space-between; background: linear-gradient(rgba(0,0,0,.58), transparent); text-shadow: 0 1px 8px #000; pointer-events: none; }
 .reels-header strong { font-size: 21px; }
 .reels-header svg { width: 25px; height: 25px; }
-.reel { position: relative; width: 100%; height: 100%; min-height: 100%; overflow: hidden; scroll-snap-align: start; scroll-snap-stop: always; background: #080808; }
-.reel video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.reel { position: relative; width: 100%; height: 100%; min-height: 100%; overflow: hidden; scroll-snap-align: start; scroll-snap-stop: normal; background: #080808; }
+.reel video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; transform: translateZ(0); will-change: transform; }
 .reel--study { background: #071713; }
 .study-reel { position: absolute; inset: 0; display: flex; padding: 92px 34px 46px; flex-direction: column; align-items: flex-start; justify-content: center; background: radial-gradient(circle at 75% 18%, rgba(75,212,168,.24), transparent 32%), linear-gradient(145deg, #071713, #0f3028 56%, #07110f); }
 .study-reel::after { position: absolute; inset: 13px; border: 1px solid rgba(139,244,207,.2); border-radius: 28px; content: ''; pointer-events: none; }
@@ -134,3 +135,10 @@
   .desktop-app { min-height: 156px; }
   .desktop-app__icon { width: 62px; height: 62px; }
 }
+
+.instagram-shell:has(.instagram-home){width:100%;margin:auto}
+.instagram-shell:has(.instagram-home) .instagram-content{inset:0}
+.instagram-shell:has(.instagram-home) .instagram-home{position:relative;width:100%;height:100%;margin:0;overflow:hidden}
+.instagram-shell:has(.instagram-home) .instagram-nav{background:transparent;border:0;height:6.2%;min-height:32px}
+.instagram-shell:has(.instagram-home) .instagram-nav svg{visibility:hidden}
+.instagram-shell:has(.instagram-home) .instagram-home img{width:100%;height:100%;object-fit:fill}

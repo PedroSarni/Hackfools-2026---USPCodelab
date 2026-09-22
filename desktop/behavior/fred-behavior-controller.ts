@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { FredMood, FredPositionIntent, FredReaction, FredSimulation } from '../../shared/contracts';
 
 const SIMULATIONS: Record<FredSimulation, { mood: FredMood; intent: FredPositionIntent; message: string; durationMs: number }> = {
-  study: { mood: 'observing', intent: 'discreet', message: 'Abriu o material? Vou ficar aqui. Discretíssimo.', durationMs: 7_000 },
+  study: { mood: 'observing', intent: 'discreet', message: 'Abriu o material? Vou ficar aqui.', durationMs: 7_000 },
   distraction: { mood: 'angry', intent: 'attention', message: 'Você disse “só mais um vídeo” faz três vídeos.', durationMs: 6_500 },
   absent: { mood: 'disappointed', intent: 'attention', message: 'Você sumiu e deixou só eu estudando.', durationMs: 6_500 },
   complete: { mood: 'happy', intent: 'celebrate', message: 'Aí sim! Senti esse progresso nos ossos.', durationMs: 6_500 },
@@ -47,6 +47,10 @@ export class FredBehaviorController {
     this.deliver('observing', 'Opa, desculpa, tava scrollando aqui. Já voltei!', 'hover', 'discreet', 5_000, 70);
   }
 
+  say(message: string, complete = false): void {
+    this.deliver(complete ? 'happy' : 'observing', message, 'manual', complete ? 'celebrate' : 'discreet', 9_000);
+  }
+
   dispose(): void { clearTimeout(this.timer); }
 
   private deliver(
@@ -71,7 +75,7 @@ export class FredBehaviorController {
 
   private defaultMessage(mood: FredMood): string {
     return {
-      idle: 'Freddy na área. Abre o PDF que eu fico de olho.',
+      idle: 'Freddy na área. Estou de olho.',
       observing: 'Não tenho retina, mas tô de olho.',
       happy: 'Aí sim! Senti esse progresso nos ossos.',
       angry: 'Você disse “só mais um vídeo” faz três vídeos.',

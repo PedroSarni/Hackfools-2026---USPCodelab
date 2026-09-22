@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import type { ProcrastinationSessionState, ReelAsset } from '../../shared/contracts';
 import { InstagramNav } from './InstagramNav';
 import { ReelsFeed } from './ReelsFeed';
+import type { FreddyPhase } from '../../shared/freddy-session';
 
-export function InstagramView(): React.JSX.Element {
+export function InstagramView({ phase }: { phase: FreddyPhase }): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<'home' | 'reels'>('home');
   const [reels, setReels] = useState<ReelAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,10 +64,12 @@ export function InstagramView(): React.JSX.Element {
       <section className="instagram-content">
         {activeTab === 'home' ? (
           <div className="instagram-home" aria-label="Home estática do Instagram simulado">
-            <img src="./instagram/home.jpeg" alt="Home estática do Instagram com stories e publicação do Hackfools" draggable={false} />
+            <img src="./instagram/home.png" alt="Home estática do Instagram com stories e publicação do Hackfools" draggable={false} />
+            <InstagramNav active={activeTab} onHome={() => setActiveTab('home')} onReels={() => setActiveTab('reels')} />
           </div>
         ) : (
           <ReelsFeed
+            supervised={phase === 'active'}
             reels={reels}
             loading={loading}
             error={error}
@@ -74,7 +77,7 @@ export function InstagramView(): React.JSX.Element {
           />
         )}
       </section>
-      <InstagramNav active={activeTab} onHome={() => setActiveTab('home')} onReels={() => setActiveTab('reels')} />
+      {activeTab === 'reels' && <InstagramNav active={activeTab} onHome={() => setActiveTab('home')} onReels={() => setActiveTab('reels')} />}
     </main>
   );
 }

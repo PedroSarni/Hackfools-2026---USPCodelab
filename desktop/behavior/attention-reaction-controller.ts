@@ -5,19 +5,24 @@ const COOLDOWN_MS = 7_000;
 
 export class AttentionReactionController {
   private previousStatus: AttentionSignal['status'] = 'uncertain';
-  private lastReactionAt = 0;
+  private lastReactionAt = -Infinity;
+  private pending: Pick<FredReaction, 'mood' | 'message'> | null = null;
 
   consume(signal: AttentionSignal): FredReaction | null {
-    if (!signal.available || signal.source !== 'camera') return null;
-    if (signal.status === this.previousStatus) return null;
-
-    const prior = this.previousStatus;
-    this.previousStatus = signal.status;
+    if (!signal.available || signal.source !== 'camera') {
+      this.pending = null;
+      this.previousStatus = 'uncertain';
+      return null;
+    }
+    if (signal.status !== this.previousStatus) {
+      this.pending = this.reactionFor(signal.status, this.previousStatus);
+      this.previousStatus = signal.status;
+    }
     const now = signal.observedAt;
-    if (signal.status === 'uncertain' || now - this.lastReactionAt < COOLDOWN_MS) return null;
-
-    const specification = this.reactionFor(signal.status, prior);
+    if (now - this.lastReactionAt < COOLDOWN_MS) return null;
+    const specification = this.pending;
     if (!specification) return null;
+    this.pending = null;
     this.lastReactionAt = now;
     return {
       reactionId: randomUUID(),
@@ -33,9 +38,12 @@ export class AttentionReactionController {
     status: AttentionSignal['status'],
     prior: AttentionSignal['status'],
   ): Pick<FredReaction, 'mood' | 'message'> | null {
+    if (status === 'down') {
+      return { mood: 'angry', message: 'Eu espero que isso seja um livro' };
+    }
 
     if (status === 'absent') {
-      return { mood: 'disappointed', message: 'Ei, volta aqui! Ainda temos slides para estudar.' };
+      return { mood: 'disappointed', message: 'Ei, volta aqui! Ainda temos o que estudar.' };
     }
     if (status === 'screen' && prior === 'absent') {
       return { mood: 'observing', message: 'Boa, você voltou! Vamos continuar.' };

@@ -6,12 +6,19 @@ export class AcademyService {
  private state = initialAcademy();
  private queue: Promise<unknown> = Promise.resolve();
  constructor(private readonly path: string) {}
- async load(): Promise<void> {
+ async load(resetProgress = false): Promise<void> {
   try {
    const data = JSON.parse(await readFile(this.path, 'utf8')) as AcademyState;
    if (data.version !== 1 || !Array.isArray(data.transactions) || !Array.isArray(data.missions) || !Array.isArray(data.subjects) || !Array.isArray(data.deadlines) || !Array.isArray(data.owned) || !data.profile) throw new Error('Arquivo acadêmico inválido. Dados preservados; restaure um backup.');
    this.state = ensureJupiterSchedule(data);
   } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+  if (resetProgress) {
+   this.state.missions.forEach((mission) => { mission.completedAt = null; });
+   this.state.transactions = [];
+   this.state.owned = [];
+   this.state.equipped = null;
+   this.state.studyVideoLevel = 0;
+  }
  }
  getState(): AcademyState { return structuredClone(this.state); }
  dispatch(action: AcademyAction): Promise<AcademyState> {

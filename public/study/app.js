@@ -1,13 +1,13 @@
 /*
   Aula em formato Reels
-  - Cada slide precisa ficar ATIVO por pelo menos 20 segundos.
+  - Cada slide precisa ficar ATIVO por pelo menos 6 segundos.
   - O tempo pausa quando a aba deixa de estar visível.
-  - Slides importantes abrem um checkpoint depois dos 20s.
+  - Slides importantes abrem um checkpoint depois dos 6s.
   - O próximo slide só é liberado depois da resposta correta.
 */
 
 const PDF_URL = "aula-pilhas.pdf";
-const MIN_SECONDS_PER_SLIDE = 8;
+const MIN_SECONDS_PER_SLIDE = 6;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
 
@@ -141,12 +141,13 @@ const loading = document.getElementById("loading");
 
 let pdf = null;
 let totalSlides = 0;
-let currentIndex = 0; // zero-based
+let currentIndex = 0;
 let isAnimating = false;
 let touchStartY = null;
 let lastWheelAt = 0;
 let timerHandle = null;
 let lastTick = performance.now();
+let completionNotified = false;
 
 // Cada slide acumula apenas tempo em que esteve realmente ativo e a aba estava visível.
 const state = [];
@@ -321,6 +322,10 @@ function updateHUD() {
   gateText.textContent = slideNumber() === totalSlides
     ? "Você chegou ao fim da aula."
     : "Liberado. Role para cima para continuar.";
+  if (slideNumber() === totalSlides && !completionNotified) {
+    completionNotified = true;
+    window.parent.postMessage({ type: "study:ready-to-complete" }, "*");
+  }
   if (slideNumber() !== totalSlides) swipeHint.classList.add("is-visible");
 }
 
@@ -468,7 +473,7 @@ window.addEventListener("resize", () => {
 });
 
 document.addEventListener("visibilitychange", () => {
-  // Evita que 20s contem enquanto a pessoa está em outra aba.
+  // Evita que os 6s contem enquanto a pessoa está em outra aba.
   lastTick = performance.now();
 });
 
@@ -542,7 +547,7 @@ function chanceForBet(bet) {
   return Math.max(1, Math.min(50, 51 - bet));
 }
 
-function refreshCasinoUI() {
+function refreshCasinoUI(preserveWheel = false) {
   const balance = getFreeMinutes();
   freeMinutesEl.textContent = balance;
 
@@ -557,6 +562,7 @@ function refreshCasinoUI() {
     chanceText.textContent = "0%";
     rouletteChance.textContent = "0%";
     chanceMeter.style.width = "0%";
+    if (!preserveWheel && !casinoSpinning) roulette.style.setProperty("--win-angle", "0deg");
     casinoResult.textContent = "Sem minutos livres restantes hoje.";
     casinoResult.className = "casino-result lose";
     return;
@@ -570,7 +576,8 @@ function refreshCasinoUI() {
   betAmount.textContent = bet;
   chanceText.textContent = `${chance}%`;
   rouletteChance.textContent = `${chance}%`;
-  chanceMeter.style.width = `${chance * 2}%`;
+  chanceMeter.style.width = `${chance}%`;
+  if (!preserveWheel && !casinoSpinning) roulette.style.setProperty("--win-angle", `${chance * 3.6}deg`);
 }
 
 function openCasino() {
@@ -661,10 +668,11 @@ async function spinCasino() {
   refreshCasinoUI();
 
   const chance = chanceForBet(bet);
-  const won = Math.random() * 100 < chance;
-
-  // A roleta é visual; a probabilidade real é calculada acima.
-  rouletteRotation += 1440 + Math.floor(Math.random() * 720);
+  // Um único ângulo determina tanto o resultado quanto a posição sob o ponteiro.
+  const landingAngle = Math.random() * 360;
+  const won = landingAngle < chance * 3.6;
+  const targetRotation = (360 - landingAngle) % 360;
+  rouletteRotation += 1800 + (targetRotation - rouletteRotation % 360 + 360) % 360;
   roulette.style.transform = `rotate(${rouletteRotation}deg)`;
 
   let ticks = 0;
@@ -694,10 +702,10 @@ async function spinCasino() {
   }
 
   casinoSpinning = false;
-  refreshCasinoUI();
+  refreshCasinoUI(true);
 }
 
-betRange?.addEventListener("input", refreshCasinoUI);
+betRange?.addEventListener("input", () => refreshCasinoUI());
 spinButton?.addEventListener("click", spinCasino);
 casinoClose?.addEventListener("click", closeCasino);
 casinoTeaser?.addEventListener("click", openCasino);

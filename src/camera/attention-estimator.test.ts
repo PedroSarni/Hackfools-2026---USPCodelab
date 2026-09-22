@@ -24,6 +24,15 @@ function observation(
 }
 
 describe('AttentionEstimator', () => {
+  it('calibra automaticamente de frente e detecta a cabeça abaixada', () => {
+    const estimator = new AttentionEstimator();
+    for (let n = 0; n < 20; n++) estimator.update(observation(1000 + n * 100));
+    const down = { metrics: { pitch: 0.42, yaw: 0, roll: 0, faceWidth: 0.3 } };
+    let result = estimator.update(observation(3000, down));
+    for (let n = 1; n <= 35; n++) result = estimator.update(observation(3000 + n * 100, down));
+    expect(result.signal.calibrated).toBe(true);
+    expect(result.signal.status).toBe('down');
+  });
   it('detecta presença sem calibração', () => {
     const estimator = new AttentionEstimator();
     expect(estimator.update(observation(1_000)).candidate).toBe('screen');

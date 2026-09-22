@@ -1,3 +1,4 @@
+import { MATERIAL_PROOFS, verifyMaterialProof, type MaterialProof } from './material-checks';
 export interface Subject { id: string; name: string; color: string }
 export interface Mission { id: string; title: string; subjectId: string; due: string; criterion: 'manual' | 'minutes' | 'pages'; target: number; material: string; pages: string; completedAt: string | null }
 export interface Deadline { id: string; title: string; subjectId: string; due: string; content: string; material: string; pages: string; notes: string; priority: 'normal' | 'high' }
@@ -5,21 +6,29 @@ export interface Transaction { id: string; amount: number; reason: string; at: s
 export interface AcademyState { version: 1; subjects: Subject[]; missions: Mission[]; deadlines: Deadline[]; transactions: Transaction[]; owned: string[]; equipped: string | null; studyVideoLevel: number; profile: { name: string; availableMinutes: number } }
 export type AcademyAction =
  | { type: 'subject.save'; value: Subject } | { type: 'subject.delete'; id: string }
- | { type: 'mission.save'; value: Mission } | { type: 'mission.delete'; id: string } | { type: 'mission.complete'; id: string }
+ | { type: 'mission.save'; value: Mission } | { type: 'mission.delete'; id: string } | { type: 'mission.complete'; id: string; proof?: MaterialProof | { slidesCompleted: true } }
  | { type: 'deadline.save'; value: Deadline } | { type: 'deadline.delete'; id: string }
  | { type: 'shop.buy'; id: string } | { type: 'shop.equip'; id: string | null }
  | { type: 'study-video.upgrade' }
+ | { type: 'freddy.dismiss.buy' }
  | { type: 'wallet.bonus' }
  | { type: 'profile.save'; value: AcademyState['profile'] };
 export const MISSION_REWARD = 50;
-/** Upgrade prices. Each level increases the displayed width by 25%; CSS keeps 16:9. */
+export const FREDDY_DISMISS_PRICE = 1000;
 export const STUDY_VIDEO_UPGRADE_PRICES = [50, 100, 200, 400] as const;
+export const FREDDY_SKINS = [
+ { id: 'freddy_asa', name: 'Anjo', price: 50 },
+ { id: 'freddy_descolado', name: 'Descolado', price: 100 },
+ { id: 'freddy_fogo', name: 'Em chamas', price: 150 },
+ { id: 'freddy_rock', name: 'Rockstar', price: 200 },
+ { id: 'freddy_bike', name: 'Ciclista', price: 250 },
+] as const;
 export const CATALOG = [
- { id: 'lavender', name: 'Freddy Roxinho da Aprovação', price: 100, color: '#7856c8', category: 'Freddy & Interface', effect: 'Aplica uma skin roxa vibrante na interface do FreddyBuddy.', available: true },
+ { id: 'lavender', name: 'Freddy Roxinho da Aprovação', price: 100, color: '#7856c8', category: 'Freddy & Interface', effect: 'Aplica uma skin roxa vibrante na interface do Foco Total.', available: true },
  { id: 'ocean', name: 'Modo Professor Cancelou', price: 150, color: '#087d91', category: 'Freddy & Interface', effect: 'A paz azul-petróleo de descobrir que a aula das 21h foi cancelada.', available: true },
  { id: 'brainrot', name: 'Brainrot a Cada 10 Slides', price: 200, color: '#e85d2a', category: 'Caos controlado', effect: 'Aplica o tema laranja do feed infinito e libera o visual Brainrot.', available: true },
  { id: 'premium', name: 'Freddy Agiota de Óculos', price: 400, color: '#8f43b8', category: 'Freddy & Interface', effect: 'Freddy coloca os óculos e passa a cobrar cada segundo de estudo.', available: true },
- { id: 'screen', name: 'Subway Surfers Acadêmico', price: 350, color: '#d78a00', category: 'Caos controlado', effect: 'Ativa o tema dourado da telinha acadêmica no FreddyBuddy.', available: true },
+ { id: 'screen', name: 'Subway Surfers Acadêmico', price: 350, color: '#d78a00', category: 'Caos controlado', effect: 'Ativa o tema dourado da telinha acadêmica no Foco Total.', available: true },
  { id: 'second', name: 'TDAH Deluxe: Duas Telinhas', price: 500, color: '#d34f65', category: 'Caos controlado', effect: 'Ativa a skin rosa de caos máximo para a interface.', available: true },
  { id: 'fred', name: 'Freddy Influencer de Estudos', price: 400, color: '#563aa4', category: 'Freddy & Interface', effect: 'Freddy vira criador de conteúdo e fiscaliza com confiança absoluta.', available: true },
  { id: 'break', name: 'Intervalo CLT Premium', price: 300, color: '#b26b16', category: 'Caos controlado', effect: 'Ativa o tema marrom-dourado do sindicato dos procrastinadores.', available: true },
@@ -99,9 +108,11 @@ export function reduceAcademy(previous: AcademyState, action: AcademyAction, now
  case 'mission.delete': id(action.id); if (isJupiterManaged(action.id)) throw new Error('Missão obrigatória: Freddy não deixa apagar.'); state.missions = state.missions.filter(m => m.id !== action.id); break;
  case 'mission.complete': {
   id(action.id); const m = state.missions.find(m => m.id === action.id); if (!m) throw new Error('Missão não encontrada.'); if (m.completedAt) return state;
+  if (m.id === 'jupiter-pilhas' && (!action.proof || !('slidesCompleted' in action.proof) || action.proof.slidesCompleted !== true)) throw new Error('Chegue ao último slide da aula para concluir esta atividade.');
+  if (MATERIAL_PROOFS[m.id] && !verifyMaterialProof(m.id, action.proof)) throw new Error('Conclua a forma de comprovação indicada para esta atividade.');
   if (m.criterion !== 'manual') throw new Error(`Requisito pendente: ${m.target} ${m.criterion === 'minutes' ? 'minutos ativos' : 'páginas visitadas'}. O leitor ainda não está integrado.`);
   m.completedAt = now;
-  if (!state.transactions.some(t => t.id === `mission-${m.id}`)) state.transactions.push({ id: `mission-${m.id}`, amount: MISSION_REWARD, reason: `Autodeclaração: ${m.title}`, at: now }); break;
+  if (!state.transactions.some(t => t.id === `mission-${m.id}`)) state.transactions.push({ id: `mission-${m.id}`, amount: MISSION_REWARD, reason: `${isJupiterManaged(m.id) ? 'Material comprovado' : 'Autodeclaração'}: ${m.title}`, at: now }); break;
  }
  case 'deadline.save': {
   const v = action.value; id(v.id); text(v.title, 160); subject(v.subjectId); date(v.due); text(v.content, 2000, false); text(v.notes, 2000, false); text(v.material, 300, false); text(v.pages, 80, false);
@@ -111,7 +122,8 @@ export function reduceAcademy(previous: AcademyState, action: AcademyAction, now
  }
  case 'deadline.delete': id(action.id); if (isJupiterManaged(action.id)) throw new Error('Prazo oficial importado do JúpiterWeb.'); state.deadlines = state.deadlines.filter(d => d.id !== action.id); break;
  case 'shop.buy': {
-  const item = CATALOG.find(i => i.id === action.id); if (!item?.available) throw new Error('Este item depende de recursos ainda não disponíveis.');
+  const item = CATALOG.find(i => i.id === action.id) ?? FREDDY_SKINS.find(i => i.id === action.id);
+  if (!item || ('available' in item && !item.available)) throw new Error('Este item depende de recursos ainda não disponíveis.');
   if (state.owned.includes(item.id)) return state;
   if (balanceOf(state) < item.price) throw new Error('Saldo insuficiente. Conclua missões para ganhar Study Coins.');
   state.transactions.push({ id: `purchase-${item.id}`, amount: -item.price, reason: item.name, at: now }); state.owned.push(item.id); state.equipped = item.id; break;
@@ -128,7 +140,12 @@ export function reduceAcademy(previous: AcademyState, action: AcademyAction, now
   state.studyVideoLevel = nextLevel;
   break;
  }
- case 'wallet.bonus': state.transactions.push({ id: `demo-bonus-${now}-${state.transactions.length}`, amount: 100, reason: 'Bônus de demonstração FreddyBuddy', at: now }); break;
+ case 'freddy.dismiss.buy': {
+  if (state.transactions.some(transaction => transaction.id === 'freddy-dismissal')) return state;
+  if (balanceOf(state) < FREDDY_DISMISS_PRICE) throw new Error(`Saldo insuficiente. São necessárias ${FREDDY_DISMISS_PRICE} Study Coins.`);
+  state.transactions.push({ id: 'freddy-dismissal', amount: -FREDDY_DISMISS_PRICE, reason: 'Liberdade do Freddy', at: now }); break;
+ }
+ case 'wallet.bonus': state.transactions.push({ id: `demo-bonus-${now}-${state.transactions.length}`, amount: 100, reason: 'Bônus exclusivo da versão de desenvolvedor', at: now }); break;
  case 'profile.save': text(action.value.name, 80); if (!Number.isInteger(action.value.availableMinutes) || action.value.availableMinutes < 0 || action.value.availableMinutes > 1440) throw new Error('Informe entre 0 e 1440 minutos.'); state.profile = { name: action.value.name.trim(), availableMinutes: action.value.availableMinutes }; break;
  default: throw new Error('Ação desconhecida.');
  }

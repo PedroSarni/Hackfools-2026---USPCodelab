@@ -1,8 +1,10 @@
 import { ReelsService } from '../services/reels-service';
+import { MATERIAL_LINES, SKIN_LINES } from '../../shared/freddy-lines';
 import { join } from 'node:path';
 import { app, ipcMain, type BrowserWindow } from 'electron';
 import type { AcademyService } from '../services/academy-service';
-import type { AcademyAction } from '../../shared/academy';
+import { balanceOf, FREDDY_DISMISS_PRICE, type AcademyAction } from '../../shared/academy';
+import { canDismissFreddy, sessionReels, type FreddyPhase } from '../../shared/freddy-session';
 import { FRED_MOODS, FRED_SIMULATIONS, type AppInfo } from '../../shared/contracts';
 import { IPC } from '../../shared/events';
 import { AttentionReactionController } from '../behavior/attention-reaction-controller';
@@ -24,7 +26,17 @@ export function registerHandlers(dependencies: HandlerDependencies): () => void 
   const reactions = new AttentionReactionController();
   const reels = new ReelsService(join(app.getAppPath(), 'assets', 'reels'));
   const sessionState = { warningShown: false, limitReached: false };
+  let phase: FreddyPhase = 'waiting';
+  const buddyState = () => {
+    const academy = dependencies.academy.getState();
+    const tasksCompleted = canDismissFreddy(academy);
+    const balance = balanceOf(academy);
+    return { phase, tasksCompleted, balance, canDismiss: phase === 'active' && (tasksCompleted || balance >= FREDDY_DISMISS_PRICE) };
+  };
+  const requireActive = (): void => { if (phase !== 'active') throw new Error('Foco Total não está ativo.'); };
   const channels = [
+    'buddy:material-opened', 'buddy:skin-selected',
+    'buddy:get-session', 'buddy:start', 'buddy:dismiss', 'buddy:finish',
     'main:open-instagram', 'camera:minimize', 'instagram:close', 'instagram:get-reels', 'instagram:get-procrastination-state', 'instagram:record-procrastination-milestone', 'instagram:start-studying',
     'academy:get', 'academy:update',
     IPC.main.openCamera,
@@ -47,18 +59,60 @@ export function registerHandlers(dependencies: HandlerDependencies): () => void 
     assertTrustedSender(event, dependencies.trustedWebContentsIds);
     if (event.sender.id !== dependencies.getMainWindow()?.webContents.id) throw new Error('Origem acadêmica não autorizada.');
   };
+  ipcMain.handle('buddy:get-session', (event) => { requireMain(event); return buddyState(); });
+  ipcMain.handle('buddy:start', (event) => {
+    requireMain(event);
+    if (phase === 'waiting') phase = 'active';
+    requireActive();
+    dependencies.fred.show();
+    return buddyState();
+  });
+  ipcMain.handle('buddy:dismiss', async (event) => {
+    requireMain(event);
+    requireActive();
+    if (!canDismissFreddy(dependencies.academy.getState())) await dependencies.academy.dispatch({ type: 'freddy.dismiss.buy' });
+    phase = 'dying';
+    dependencies.fred.retire();
+    dependencies.getCameraWindow()?.close();
+    sessionState.warningShown = false;
+    sessionState.limitReached = false;
+    return buddyState();
+  });
+  ipcMain.handle('buddy:finish', (event) => {
+    requireMain(event);
+    if (phase !== 'dying' && phase !== 'retired') throw new Error('A despedida ainda não começou.');
+    phase = 'retired';
+    return buddyState();
+  });
   ipcMain.handle('main:open-instagram', (event) => { requireMain(event); event.sender.send('desktop:navigate', 'instagram'); });
   ipcMain.handle('camera:minimize', (event) => { assertTrustedSender(event, dependencies.trustedWebContentsIds); dependencies.getCameraWindow()?.hide(); });
   ipcMain.handle('instagram:close', (event) => { requireMain(event); event.sender.send('desktop:navigate', 'desktop'); });
-  ipcMain.handle('instagram:get-reels', (event) => { requireMain(event); return reels.list(); });
+  ipcMain.handle('instagram:get-reels', async (event) => { requireMain(event); return sessionReels(await reels.list(), phase); });
   ipcMain.handle('instagram:get-procrastination-state', (event) => { requireMain(event); return { ...sessionState }; });
-  ipcMain.handle('instagram:record-procrastination-milestone', (event, value) => { requireMain(event); if (value !== 'warning' && value !== 'limit') throw new Error('Marco inválido'); sessionState.warningShown = true; if (value === 'limit') sessionState.limitReached = true; return { ...sessionState }; });
-  ipcMain.handle('instagram:start-studying', (event) => { requireMain(event); event.sender.send('desktop:navigate', 'foco'); });
+  ipcMain.handle('instagram:record-procrastination-milestone', (event, value) => { requireMain(event); requireActive(); if (value !== 'warning' && value !== 'limit') throw new Error('Marco inválido'); sessionState.warningShown = true; if (value === 'limit') sessionState.limitReached = true; return { ...sessionState }; });
+  ipcMain.handle('instagram:start-studying', (event) => { requireMain(event); requireActive(); event.sender.send('desktop:navigate', 'foco'); });
   ipcMain.handle('academy:get', (event) => { requireMain(event); return dependencies.academy.getState(); });
-  ipcMain.handle('academy:update', (event, action: AcademyAction) => { requireMain(event); return dependencies.academy.dispatch(action); });
+  ipcMain.handle('academy:update', async (event, action: AcademyAction) => {
+    requireMain(event); requireActive();
+    const alreadyDone = action.type === 'mission.complete' && dependencies.academy.getState().missions.find(m => m.id === action.id)?.completedAt;
+    const state = await dependencies.academy.dispatch(action);
+    if (action.type === 'mission.complete' && !alreadyDone) dependencies.fred.say(MATERIAL_LINES[action.id]?.completed ?? 'Atividade concluída! Mais uma para a coleção.', true);
+    return state;
+  });
+  ipcMain.handle('buddy:material-opened', (event, id: unknown) => {
+    requireMain(event); requireActive();
+    if (typeof id !== 'string' || !dependencies.academy.getState().missions.some(m => m.id === id)) throw new Error('Material inválido.');
+    dependencies.fred.say(MATERIAL_LINES[id]?.opened ?? 'Material aberto!');
+  });
+  ipcMain.handle('buddy:skin-selected', (event, id: unknown) => {
+    requireMain(event); requireActive();
+    if (typeof id !== 'string' || !Object.hasOwn(SKIN_LINES, id)) throw new Error('Skin inválida.');
+    dependencies.fred.say(SKIN_LINES[id]);
+  });
 
   ipcMain.handle(IPC.main.openCamera, async (event) => {
     assertTrustedSender(event, dependencies.trustedWebContentsIds);
+    requireActive();
     await dependencies.openCameraWindow();
   });
 
@@ -71,7 +125,7 @@ export function registerHandlers(dependencies: HandlerDependencies): () => void 
     assertTrustedSender(event, dependencies.trustedWebContentsIds);
     return dependencies.fred.getState();
   });
-  ipcMain.handle(IPC.fred.show, (event) => { assertTrustedSender(event, dependencies.trustedWebContentsIds); dependencies.fred.show(); });
+  ipcMain.handle(IPC.fred.show, (event) => { assertTrustedSender(event, dependencies.trustedWebContentsIds); requireActive(); dependencies.fred.show(); });
   ipcMain.handle(IPC.fred.hide, (event) => { assertTrustedSender(event, dependencies.trustedWebContentsIds); dependencies.fred.hide(); });
   ipcMain.handle(IPC.fred.openMain, (event) => {
     assertTrustedSender(event, dependencies.trustedWebContentsIds);
@@ -81,11 +135,13 @@ export function registerHandlers(dependencies: HandlerDependencies): () => void 
   });
   ipcMain.handle(IPC.fred.simulate, (event, value: unknown) => {
     assertTrustedSender(event, dependencies.trustedWebContentsIds);
+    requireActive();
     if (typeof value !== 'string' || !FRED_SIMULATIONS.includes(value as never)) throw new Error('Simulação inválida.');
     return dependencies.fred.simulate(value as (typeof FRED_SIMULATIONS)[number]);
   });
   ipcMain.handle(IPC.fred.preview, (event, value: unknown) => {
     assertTrustedSender(event, dependencies.trustedWebContentsIds);
+    requireActive();
     if (typeof value !== 'string' || !FRED_MOODS.includes(value as never)) throw new Error('Humor inválido.');
     dependencies.fred.preview(value as (typeof FRED_MOODS)[number]);
   });
@@ -116,10 +172,10 @@ export function registerHandlers(dependencies: HandlerDependencies): () => void 
   const attentionListener = (event: Electron.IpcMainEvent, value: unknown): void => {
     try {
       assertTrustedSender(event, dependencies.trustedWebContentsIds);
+      if (phase !== 'active' || event.sender.id !== dependencies.getCameraWindow()?.webContents.id) return;
       const signal = validateAttentionSignal(value);
       const reaction = reactions.consume(signal);
       if (reaction) {
-        dependencies.getCameraWindow()?.webContents.send(IPC.fred.reaction, reaction);
         dependencies.fred.reactToCamera(reaction);
       }
     } catch (error) {

@@ -12,7 +12,6 @@ export const IPC = {
     attentionUpdated: 'attention:updated',
   },
   fred: {
-    reaction: 'fred:reaction',
     state: 'fred:state',
     audio: 'fred:audio',
     getState: 'fred:get-state',
