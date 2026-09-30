@@ -61,6 +61,7 @@
 .hero-burst .eyebrow { color: #3c2740; }
 .hero-burst h1 { max-width: 780px; margin: 13px 0 20px; }
 .hero-burst h1 span { color: #fff8e8; text-shadow: 2px 3px 0 #3f306e; }
+.hero-burst h1 .hero-plain-line { display: block; color: inherit; text-shadow: none; }
 .hero-burst > div > p:not(.eyebrow) { max-width: 700px; color: #423647; font-size: 17px; font-weight: 650; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 27px; }
 .hero-actions button { display: flex; align-items: center; gap: 8px; padding: 14px 18px; border: 2px solid #28233c; border-radius: 12px; color: #28233c; background: #fff8e8; box-shadow: 4px 5px 0 #28233c; }

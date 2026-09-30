@@ -196,7 +196,7 @@ export function App(): React.JSX.Element {
 
     {page === 'Hoje' && <main className="content">
       <section className="hero-burst">
-        <div><p className="eyebrow">SEGUNDO SEMESTRE · BSI ICMC/USP</p><h1>Você não<br/><span>escolheu estudar.</span><br/>O Júpiter escolheu por você.</h1><p>Grade sincronizada. Câmera ligada. Freddy acordado. Agora só falta<br/>você fingir que isso foi uma decisão sua.</p><div className="hero-actions"><button className="cta" onClick={() => void startMission(missions[0])}><Icon name="play" /> COMEÇAR PILHAS AGORA</button><button onClick={() => setPage('Missões')}>Ver todas as obrigações</button></div></div>
+        <div><p className="eyebrow">SEGUNDO SEMESTRE · BSI ICMC/USP</p><h1>Você não<br/><span>escolheu estudar.</span><span className="hero-plain-line">O Júpiter escolheu</span><span className="hero-plain-line">por você.</span></h1><p>Grade sincronizada. Câmera ligada. Freddy acordado. Agora só falta<br/>você fingir que isso foi uma decisão sua.</p><div className="hero-actions"><button className="cta" onClick={() => void startMission(missions[0])}><Icon name="play" /> COMEÇAR PILHAS AGORA</button><button onClick={() => setPage('Missões')}>Ver todas as obrigações</button></div></div>
         <div className="fred-score"><img src="./fred/03_realistic_sunglasses.gif" alt="Freddy usando óculos escuros"/><span>NÍVEL DE COBRANÇA</span><strong>{100 - percent}%</strong><p>{completed ? 'Freddy reconhece um esforço mínimo.' : 'Freddy está profundamente decepcionado.'}</p></div>
       </section>
 

@@ -1,9 +1,9 @@
 {
-  "name": "foco-total",
-  "productName": "Foco Total",
+  "name": "freddy-buddy",
+  "productName": "Freddy Buddy",
   "version": "0.1.0",
   "private": true,
-  "description": "Foco Total — interface acadêmica, mascote flutuante e câmera com sinais de atenção",
+  "description": "Freddy Buddy — Um companheiro universitário integrado ao seu desktop",
   "main": "dist-electron/desktop/main.js",
   "scripts": {
     "assets:prepare": "node scripts/prepare-mediapipe-assets.mjs",
@@ -18,7 +18,8 @@
     "typecheck": "tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "test": "vitest run",
     "test:smoke": "npm run build && node scripts/run-electron.mjs scripts/smoke-session.cjs",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:web": "npm run build:renderer && node scripts/copy-web-assets.mjs"
   },
   "dependencies": {
     "@echogarden/espeak-ng-emscripten": "0.3.5",

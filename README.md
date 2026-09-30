@@ -1,52 +1,125 @@
-# 🎓 Foco Total
+# 🎓 Freddy Buddy
 
-> **Transformando procrastinação em produtividade — do jeito mais caótico possível.**
+> **Um companheiro universitário integrado ao seu desktop — transformando procrastinação em produtividade do jeito mais caótico possível.**
 
-Projeto desenvolvido durante o **Hackfools 2026**, pelo **USP CodeLab**.
+## 👥 Colaboradores
 
-O **Foco Total** é uma aplicação desktop experimental que mistura produtividade acadêmica, gamificação e humor para criar uma experiência propositalmente exagerada de combate à procrastinação.
-
-A ideia é simples: se estudar normalmente não está funcionando, talvez um Freddy flutuando pela sua tela, monitorando sua atenção, distribuindo moedas virtuais e transformando uma aula em um feed de Reels resolva.
-
-Ou piore tudo.
-
-Esse é meio que o ponto.
+- [Breno Cad](https://github.com/brenocad77)
+- [Gabriel Maia](https://github.com/Bagiel1)
+- [Murilo Ataide](https://github.com/muriloataide)
+- [Pedro Sarni](https://github.com/PedroSarni)
 
 ---
 
-## 💡 A ideia
+## 🌐 Teste agora
 
-O Foco Total simula uma plataforma acadêmica gamificada na qual o estudante possui:
+### [▶ Abrir o Freddy Buddy no navegador](https://pedrosarni.github.io/Hackfools-2026---USPCodelab/)
 
-* 📚 disciplinas e tarefas acadêmicas;
-* 🎯 missões obrigatórias;
-* 🪙 **Study Coins** como sistema de recompensa;
-* 💀 Freddy, um buddy que acompanha o usuário pela área de trabalho;
-* 📷 detecção local de sinais de atenção pela webcam;
-* 📱 conteúdos acadêmicos apresentados em formatos inspirados em redes sociais;
-* 🎰 recompensas e mecânicas propositalmente absurdas.
+Na demonstração web, você entra em uma área de trabalho simulada e pode explorar uma prévia da experiência do Freddy Buddy diretamente pelo navegador.
 
-A aplicação utiliza como demonstração o **segundo período de Sistemas de Informação do ICMC/USP**.
+Abra o **Google Chrome** e siga o fluxo de autenticação usando dados fictícios. A demonstração simula a identificação de uma conta universitária e a instalação do Freddy Buddy no sistema. Porém, as funcionalidades são limitadas na versão web.
+
+O progresso da versão web fica salvo apenas no seu navegador. A versão em Electron oferece a experiência completa do Freddy Buddy, com todas as funcionalidades e integrações com o desktop.
+
+Projeto desenvolvido durante o **Hackfools 2026**, organizado pelo **USP CodeLab Sanca**.
+
+---
+
+# 💀 O que é o Freddy Buddy?
+
+O **Freddy Buddy** é um software experimental que transforma o próprio ambiente do computador em uma experiência universitária gamificada.
+
+Em vez de ser apenas mais um aplicativo de produtividade que o estudante precisa lembrar de abrir, Freddy Buddy foi pensado para fazer parte da experiência do desktop.
+
+Depois de instalado, **Freddy**, inspirado no esqueleto mascote da biblioteca do ICMC, passa a acompanhar o usuário enquanto ele utiliza o computador.
+
+Ele pode permanecer sobre outras janelas, reagir ao comportamento do estudante, acompanhar sinais de atenção, oferecer recompensas e servir como ponto de acesso às diferentes funcionalidades do sistema.
+
+A proposta mistura:
+
+- 🖥️ integração com o ambiente desktop;
+- 💀 um buddy virtual persistente;
+- 📚 ferramentas acadêmicas;
+- 🎯 gamificação;
+- 🪙 economia virtual;
+- 📷 detecção local de sinais de atenção;
+- 📱 formatos inspirados em redes sociais;
+- 🎰 recompensas propositalmente absurdas.
+
+Tudo isso com uma pergunta central:
+
+> **E se as mesmas técnicas usadas para disputar nossa atenção fossem colocadas dentro do computador para tentar fazer um universitário estudar?**
+
+---
+
+# 🖥️ A experiência
+
+A demonstração começa em uma área de trabalho.
+
+A partir dela, o usuário passa por um fluxo que simula a instalação do Freddy Buddy:
+
+1. abre o **Google Chrome**;
+2. informa um e-mail;
+3. é direcionado para uma tela simulada de autenticação da USP;
+4. o sistema identifica uma conta universitária;
+5. o **Freddy Buddy** é baixado;
+6. Freddy passa a fazer parte da experiência do desktop.
+
+A partir desse momento, o usuário pode interagir com Freddy e acessar as funcionalidades acadêmicas disponíveis no sistema.
 
 ---
 
 # ✨ Funcionalidades
 
-## 📚 Dashboard acadêmico
+## 💀 Freddy
 
-A interface principal reúne informações acadêmicas simuladas inspiradas no **JúpiterWeb**, permitindo visualizar disciplinas, atividades e conteúdos do estudante.
+Freddy é o núcleo da experiência do Freddy Buddy.
 
-As disciplinas obrigatórias aparecem como missões que fazem parte da rotina acadêmica dentro da aplicação.
+Inspirado no esqueleto Freddy, mascote da biblioteca do ICMC, ele funciona como um companheiro virtual que permanece presente durante o uso do computador.
+
+Ele pode:
+
+- permanecer como uma janela flutuante sobre outros aplicativos;
+- reagir ao comportamento do usuário;
+- reagir a períodos de inatividade;
+- interagir com eventos relacionados à câmera;
+- oferecer acesso rápido a funcionalidades do sistema;
+- utilizar diferentes skins;
+- acompanhar o progresso acadêmico do estudante.
+
+Freddy não fica limitado à interface de um único aplicativo: a proposta é justamente que ele acompanhe o usuário pelo ambiente desktop. 
+Conforme o usuário avança, Freddy acompanha seu progresso. Quando todas as obrigações são concluídas, sua presença deixa de ser necessária: Freddy desaparece e o ambiente volta ao normal.
+Até lá, ele é seu buddy.
+
+---
+
+## 🎓 Foco Total
+
+**Foco Total é um dos aplicativos integrados ao Freddy Buddy.**
+
+Ele concentra a parte acadêmica da experiência e funciona como uma central de produtividade gamificada.
+
+Dentro do Foco Total, o estudante encontra:
+
+- disciplinas;
+- tarefas;
+- missões;
+- Study Coins;
+- conteúdos acadêmicos;
+- loja de recompensas;
+- ferramentas de estudo.
+
+A interface utiliza informações acadêmicas simuladas inspiradas no **JúpiterWeb**.
 
 ---
 
 ## 🎯 Missões
 
-Atividades acadêmicas são transformadas em **missões**.
+Dentro do Foco Total, atividades acadêmicas são transformadas em **missões**.
 
-Ao concluir uma missão, o estudante recebe **Study Coins**, que podem ser utilizadas dentro do sistema de recompensas.
+Ao concluir uma missão, o estudante recebe **Study Coins**, conectando suas obrigações acadêmicas ao sistema de progressão do Freddy Buddy.
 
-Algumas obrigações acadêmicas são protegidas pela própria lógica da aplicação e não podem simplesmente ser removidas.
+Algumas obrigações acadêmicas fazem parte da própria lógica do sistema e não podem simplesmente ser removidas.
 
 ---
 
@@ -54,36 +127,23 @@ Algumas obrigações acadêmicas são protegidas pela própria lógica da aplica
 
 Porque aparentemente conhecimento não era recompensa suficiente.
 
-O Foco Total possui uma economia própria baseada em **Study Coins**.
+O Freddy Buddy possui uma economia virtual baseada em **Study Coins**.
 
-As moedas podem ser obtidas ao concluir atividades e utilizadas para desbloquear recompensas dentro da aplicação.
-
----
-
-## 💀 Freddy
-
-Freddy é o companheiro (ou fiascal) acadêmico do usuário. Inspirado do esqueleto Freddy, mascote da biblioteca do ICMC.
-
-Ele permanece como uma janela flutuante sobre os outros aplicativos e reage a diferentes eventos da aplicação.
-
-Entre suas funções estão:
-
-* reagir ao comportamento do usuário;
-* aparecer sobre outras janelas;
-* oferecer acesso rápido à loja;
-* utilizar diferentes skins;
-* reagir a períodos de inatividade;
-* interagir com eventos relacionados à atenção detectada pela câmera.
+As moedas são obtidas principalmente por meio das atividades realizadas no Foco Total e podem ser utilizadas para desbloquear recompensas e customizações.
 
 ---
 
 ## 📷 Detecção de atenção
 
-A aplicação utiliza a webcam para estimar localmente alguns sinais relacionados à atenção do usuário.
+Freddy Buddy pode utilizar a webcam para estimar localmente alguns sinais relacionados à presença e atenção do usuário.
 
-A detecção é realizada utilizando **MediaPipe**, permitindo identificar situações como ausência do enquadramento ou mudanças na orientação do rosto.
+A detecção utiliza **MediaPipe** e permite identificar situações como:
 
-Esses eventos podem gerar reações do Freddy.
+- ausência do usuário no enquadramento;
+- mudanças na orientação do rosto;
+- períodos de afastamento.
+
+Esses eventos podem provocar diferentes reações do Freddy.
 
 > A funcionalidade é experimental e não representa uma medição científica ou médica de atenção.
 
@@ -93,13 +153,13 @@ O processamento necessário para a demonstração é realizado localmente.
 
 ## 📱 Estudar... mas em formato de Reels
 
-Uma das propostas do projeto é brincar com a maneira como plataformas digitais disputam nossa atenção.
+Uma das experiências disponíveis dentro do sistema transforma conteúdos acadêmicos em uma interface vertical inspirada em **Reels**.
 
-Por isso, conteúdos acadêmicos podem ser apresentados em uma interface vertical inspirada no formato de **Reels**.
+A ideia brinca diretamente com a maneira como plataformas digitais disputam nossa atenção.
 
-Na demonstração, uma aula de **Pilhas** é apresentada em um feed vertical com dezenas de slides.
+Na demonstração, uma aula de **Pilhas** é transformada em um feed vertical com dezenas de slides.
 
-O usuário precisa permanecer no conteúdo durante determinado período e responder a **checkpoints** antes de continuar avançando.
+O usuário precisa permanecer no conteúdo durante determinado período e responder a **checkpoints** antes de continuar.
 
 Ou seja:
 
@@ -109,33 +169,80 @@ Ou seja:
 
 ## 🎰 Roleta de minutos livres
 
-Em determinados momentos da experiência, o usuário pode encontrar recompensas propositalmente questionáveis.
+Nem toda recompensa do Freddy Buddy precisa ser sensata.
 
-Uma delas é uma **roleta de minutos livres**, utilizada como parte da experiência de gamificação do projeto.
+Em determinados momentos, o usuário pode acessar uma **roleta de minutos livres**, utilizada como uma das mecânicas de gamificação da experiência.
 
 Vitórias e derrotas fazem parte da demonstração.
 
 ---
 
-## 🛍️ Loja
+## 🛍️ Loja e skins
 
-Study Coins podem ser utilizadas na loja para adquirir customizações.
+Os **Study Coins** podem ser utilizados para adquirir customizações para Freddy.
 
-Skins compradas podem ser aplicadas imediatamente ao Freddy e permanecem disponíveis dentro da aplicação. Os preços são progressivos: 50, 100, 150, 200 e 250 Study Coins.
+As skins compradas podem ser aplicadas imediatamente e permanecem disponíveis dentro da aplicação.
+
+Os preços seguem uma progressão de:
+
+**50 → 100 → 150 → 200 → 250 Study Coins**
 
 ---
 
+# 🚀 Como executar
+
+Para utilizar a experiência completa do Freddy Buddy, execute o projeto utilizando o Electron.
+
+## Pré-requisitos
+
+Antes de começar, tenha instalado:
+
+- [Node.js](https://nodejs.org/)
+- npm
+
+## Instalação
+
+Clone o repositório:
+
+```bash
+git clone https://github.com/PedroSarni/Hackfools-2026---USPCodelab.git
+```
+
+Entre na pasta do projeto:
+
+```bash
+cd Hackfools-2026---USPCodelab
+```
+
+Instale as dependências:
+
+```bash
+npm install
+```
+
+## Executando
+
+Inicie o Freddy Buddy com:
+
+```bash
+npm start
+```
+
+O projeto será compilado e iniciado como uma aplicação Electron.
+
+> Para experimentar apenas a demonstração web, também é possível utilizar a versão publicada no GitHub Pages indicada no início deste README.
+
 # 🛠️ Tecnologias
 
-O projeto foi construído principalmente com:
+O Freddy Buddy foi construído principalmente com:
 
-* **Electron** — aplicação desktop;
-* **React** — construção das interfaces;
-* **TypeScript** — lógica da aplicação;
-* **Vite** — build e ambiente de desenvolvimento;
-* **MediaPipe Tasks Vision** — processamento relacionado à câmera;
-* **Vitest** — testes automatizados;
-* **eSpeak NG / WebAssembly** — recursos de voz.
+- **Electron** — integração e experiência desktop;
+- **React** — construção das interfaces;
+- **TypeScript** — lógica da aplicação;
+- **Vite** — build e ambiente de desenvolvimento;
+- **MediaPipe Tasks Vision** — processamento relacionado à câmera;
+- **Vitest** — testes automatizados;
+- **eSpeak NG / WebAssembly** — recursos de voz.
 
 ---
 
@@ -144,8 +251,8 @@ O projeto foi construído principalmente com:
 ```text
 .
 ├── assets/
-│   └── reels/          # vídeos utilizados na experiência de Reels
-├── desktop/            # processo principal e lógica Electron
+│   └── reels/          # conteúdos utilizados na experiência de Reels
+├── desktop/            # processo principal e integração Electron
 ├── docs/               # documentação adicional
 ├── preload/            # comunicação segura Electron ↔ interface
 ├── public/             # assets públicos e modelos
@@ -157,144 +264,3 @@ O projeto foi construído principalmente com:
 ├── camera.html
 ├── package.json
 └── README.md
-```
-
----
-
-# 🚀 Como executar
-
-## Pré-requisitos
-
-Antes de começar, tenha instalado:
-
-* **Node.js 22+**
-* **npm**
-* webcam acessível pelo sistema
-
-Clone o repositório:
-
-```bash
-git clone https://github.com/PedroSarni/Hackfools-2026---USPCodelab.git
-cd Hackfools-2026---USPCodelab
-```
-
-Instale as dependências:
-
-```bash
-npm ci
-```
-
-Execute:
-
-```bash
-npm start
-```
-
----
-
-## 💻 Desenvolvimento
-
-Para executar o projeto em modo de desenvolvimento:
-
-```bash
-npm run dev
-```
-
----
-
-## 🐧 Linux / modo de demonstração
-
-Caso o Electron apresente problemas relacionados ao sandbox, X11/XWayland ou aceleração gráfica durante a demonstração:
-
-```bash
-npm run start:demo
-```
-
-Esse modo aplica as configurações necessárias apenas ao processo utilizado na demonstração.
-
----
-
-# 🧪 Testes
-
-Execute os testes automatizados:
-
-```bash
-npm test
-```
-
-Verifique os tipos:
-
-```bash
-npm run typecheck
-```
-
-Execute o build completo:
-
-```bash
-npm run build
-```
-
-Os testes cobrem diferentes partes da lógica da aplicação, incluindo regras acadêmicas, persistência, comunicação IPC, calibração, eventos relacionados à atenção e comportamento do Freddy.
-
----
-
-# 🎮 Roteiro rápido para testar
-
-Depois de iniciar a aplicação:
-
-1. Confira a interface principal, Freddy e a câmera.
-2. Abra a seção **Hoje**.
-3. Inicie a aula de **Pilhas**.
-4. Navegue pelo conteúdo vertical e complete os checkpoints.
-5. Explore as missões acadêmicas.
-6. Complete uma missão para receber **Study Coins**.
-7. Abra a loja e compre uma skin.
-8. Interaja com Freddy na área de trabalho.
-9. Teste os eventos relacionados à câmera.
-10. Explore as demais surpresas espalhadas pela aplicação.
-
----
-
-# 📁 Assets offline
-
-Os principais recursos necessários para a demonstração são empacotados junto ao projeto, incluindo assets utilizados pelo detector e conteúdos da experiência.
-
-Isso permite que boa parte da demonstração funcione sem depender de serviços externos durante sua execução.
-
----
-
-# 🏆 Hackfools 2026
-
-Este projeto foi desenvolvido para o **Hackfools 2026**, explorando de maneira satírica a relação entre:
-
-**produtividade + atenção + redes sociais + gamificação + vida universitária.**
-
-A proposta não é criar mais uma plataforma séria de produtividade.
-
-É imaginar o que aconteceria se todas as técnicas utilizadas para prender nossa atenção fossem redirecionadas para fazer um universitário estudar.
-
----
-
-## 👥 Equipe
-
-Projeto desenvolvido por membros do **USP CodeLab** durante o Hackfools 2026.
-
-
-- Pedro Sarni — @PedroSarni
-- Breno Cad — @brenocad77
-- Murilo Ataide — @muriloataide
-- Gabriel Maia — @bagiel1
-
-
----
-
-## 📚 Documentação
-
-Informações adicionais sobre execução, testes e progresso do projeto estão disponíveis na pasta [`docs/`](./docs).
-
----
-
-<p align="center">
-  <strong>Foco Total</strong><br>
-  Talvez estudar não precise ser saudável.
-</p>

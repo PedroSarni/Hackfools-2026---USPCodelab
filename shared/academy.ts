@@ -23,16 +23,6 @@ export const FREDDY_SKINS = [
  { id: 'freddy_rock', name: 'Rockstar', price: 200 },
  { id: 'freddy_bike', name: 'Ciclista', price: 250 },
 ] as const;
-export const CATALOG = [
- { id: 'lavender', name: 'Freddy Roxinho da Aprovação', price: 100, color: '#7856c8', category: 'Freddy & Interface', effect: 'Aplica uma skin roxa vibrante na interface do Foco Total.', available: true },
- { id: 'ocean', name: 'Modo Professor Cancelou', price: 150, color: '#087d91', category: 'Freddy & Interface', effect: 'A paz azul-petróleo de descobrir que a aula das 21h foi cancelada.', available: true },
- { id: 'brainrot', name: 'Brainrot a Cada 10 Slides', price: 200, color: '#e85d2a', category: 'Caos controlado', effect: 'Aplica o tema laranja do feed infinito e libera o visual Brainrot.', available: true },
- { id: 'premium', name: 'Freddy Agiota de Óculos', price: 400, color: '#8f43b8', category: 'Freddy & Interface', effect: 'Freddy coloca os óculos e passa a cobrar cada segundo de estudo.', available: true },
- { id: 'screen', name: 'Subway Surfers Acadêmico', price: 350, color: '#d78a00', category: 'Caos controlado', effect: 'Ativa o tema dourado da telinha acadêmica no Foco Total.', available: true },
- { id: 'second', name: 'TDAH Deluxe: Duas Telinhas', price: 500, color: '#d34f65', category: 'Caos controlado', effect: 'Ativa a skin rosa de caos máximo para a interface.', available: true },
- { id: 'fred', name: 'Freddy Influencer de Estudos', price: 400, color: '#563aa4', category: 'Freddy & Interface', effect: 'Freddy vira criador de conteúdo e fiscaliza com confiança absoluta.', available: true },
- { id: 'break', name: 'Intervalo CLT Premium', price: 300, color: '#b26b16', category: 'Caos controlado', effect: 'Ativa o tema marrom-dourado do sindicato dos procrastinadores.', available: true },
-] as const;
 
 export const JUPITER_PREFIX = 'jupiter-';
 export const isJupiterManaged = (id: string): boolean => id.startsWith(JUPITER_PREFIX);
@@ -122,12 +112,13 @@ export function reduceAcademy(previous: AcademyState, action: AcademyAction, now
  }
  case 'deadline.delete': id(action.id); if (isJupiterManaged(action.id)) throw new Error('Prazo oficial importado do JúpiterWeb.'); state.deadlines = state.deadlines.filter(d => d.id !== action.id); break;
  case 'shop.buy': {
-  const item = CATALOG.find(i => i.id === action.id) ?? FREDDY_SKINS.find(i => i.id === action.id);
+  const item = FREDDY_SKINS.find(i => i.id === action.id);
   if (!item || ('available' in item && !item.available)) throw new Error('Este item depende de recursos ainda não disponíveis.');
   if (state.owned.includes(item.id)) return state;
   if (balanceOf(state) < item.price) throw new Error('Saldo insuficiente. Conclua missões para ganhar Study Coins.');
   state.transactions.push({ id: `purchase-${item.id}`, amount: -item.price, reason: item.name, at: now }); state.owned.push(item.id); state.equipped = item.id; break;
  }
+
  case 'shop.equip': if (action.id !== null && !state.owned.includes(action.id)) throw new Error('Resgate o item primeiro.'); state.equipped = action.id; break;
  case 'study-video.upgrade': {
   const nextLevel = state.studyVideoLevel + 1;

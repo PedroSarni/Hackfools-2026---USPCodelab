@@ -79,7 +79,7 @@ app.whenReady().then(async () => {
     await evaluate('window.baiStudyMain.materialOpened("jupiter-calculo")');
     assert.match(await evaluate('window.baiStudyMain.getFredState().then(s=>s.message)'), /derivadas/);
     await evaluate('window.baiStudyMain.skinSelected("freddy_rock")');
-    assert.match(await evaluate('window.baiStudyMain.getFredState().then(s=>s.message)'), /rock/);
+    assert.equal(await evaluate('window.baiStudyMain.getFredState().then(s=>s.message)'), 'Hoje o solo é de estudo!');
     await evaluate('document.querySelectorAll(".mission-start")[1].click()');
     await until(() => evaluate('Boolean(document.querySelector(".material-verification input"))'));
     await pause(300);
